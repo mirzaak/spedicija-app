@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="UTF-8">
+<title>SAD Editor</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #555;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  font-family: 'Courier New', monospace;
+}
+
+.toolbar {
+  width: 100%;
+  max-width: 900px;
+  background: #1a2a2a;
+  color: #e0f0f0;
+  padding: 9px 16px;
+  border-radius: 7px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.toolbar-left { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.toolbar-title { font-weight: bold; font-size: 13px; color: #e0f0f0; }
+.toolbar-sub   { font-size: 11px; color: #7bbcc0; }
+
+.toolbar button {
+  background: #1f5f5f;
+  color: #fff;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.toolbar button:hover { background: #2a8a8a; }
+.toolbar button.close-btn { background: #6a1a1a; }
+.toolbar button.close-btn:hover { background: #952424; }
+.toolbar button:disabled { opacity: 0.45; cursor: not-allowed; }
+.toolbar button.finalize-btn { background: #1e5c1e; }
+.toolbar button.finalize-btn:hover:not(:disabled) { background: #2c8a2c; }
+.toolbar button.save-btn { background: #1f4f7f; }
+.toolbar button.save-btn:hover:not(:disabled) { background: #2a72b5; }
+
+#status-msg {
+  font-size: 12px;
+  color: #7cf;
+  min-width: 140px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* The page container scales the 2230px wide PNG to fit the viewport */
+.page-wrap {
+  position: relative;
+  /* natural size = 2230 x 3509 px, we let CSS scale it */
+  width: 900px;
+  background: #fff;
+  box-shadow: 0 4px 20px #000a;
+}
+
+.page-wrap img.bg {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* All overlays are positioned relative to the image's natural size via
+   percentage values computed from pixel coords / [2230, 3509]. */
+.overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+}
+
+.field {
+  position: absolute;
+  background: rgba(255, 255, 220, 0.55);
+  border: 1px solid rgba(100, 160, 130, 0.35);
+  border-radius: 1px;
+  outline: none;
+  font-family: 'Courier New', monospace;
+  color: #1a1a1a;
+  resize: none;
+  padding: 0 3px;
+  line-height: 1.25;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: background 0.1s, border-color 0.1s, box-shadow 0.1s;
+}
+.field:hover {
+  background: rgba(255, 255, 200, 0.88);
+  border-color: #1f8080;
+  z-index: 60;
+  overflow: visible;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.18);
+}
+.field:focus {
+  background: rgba(255, 255, 200, 0.98);
+  border-color: #0d5f5f;
+  border-width: 1.5px;
+  z-index: 70;
+  overflow: visible;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.22);
+}
+/* Fields with live data from XML — blue tint */
+.field.live {
+  color: #08306b;
+  background: rgba(220, 235, 255, 0.65);
+  border-color: rgba(80, 130, 200, 0.4);
+}
+.field.live:hover, .field.live:focus {
+  background: rgba(220, 235, 255, 0.95);
+  border-color: #2255a0;
+}
+
+/* Font sizes are relative to the 900px display width. */
+.field.f-sm  { font-size: 13px; }
+.field.f-xs  { font-size: 11px; }
+.field.f-lg  { font-size: 14px; }
+
+/* Form field labels */
+.lbl {
+  position: absolute;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 7.5px;
+  color: #0d4a4a;
+  font-weight: bold;
+  pointer-events: none;
+  line-height: 1.2;
+  white-space: nowrap;
+  z-index: 5;
+  background: rgba(255,255,255,0.6);
+  padding: 0 1px;
+}
+.lbl.wrap {
+  white-space: normal;
+  width: 4.5%;
+  word-break: break-word;
+}
+
+/* Floating field-name tooltip shown on focus */
+#field-tooltip {
+  display: none;
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a2a2a;
+  color: #e0f8f0;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 18px;
+  border-radius: 6px;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.45);
+  pointer-events: none;
+  z-index: 9999;
+  white-space: nowrap;
+  max-width: 90vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="toolbar-left">
+    <span class="toolbar-title" id="toolbar-title">SAD Editor — učitavam...</span>
+    <span class="toolbar-sub" id="toolbar-sub"></span>
+  </div>
+  <span id="status-msg"></span>
+  <button id="btn-save" class="save-btn" onclick="saveChanges()">Sačuvaj</button>
+  <button id="btn-finalize" class="finalize-btn" onclick="finalizeAndUpload()" style="display:none">✔ Potvrdi i pošalji na Drive</button>
+  <button class="close-btn" onclick="window.close()">✕ Zatvori</button>
+</div>
+
+<div class="page-wrap" id="pageWrap">
+  <img class="bg" src="/static/sad_background.png" alt="SAD forma" id="bgImg">
+
+  <div class="overlay" id="overlay">
+
+    <!-- ══ LABELI POLJA ══════════════════════════════════════════════════════ -->
+    <!-- Header -->
+    <span class="lbl" style="left:0.75%;top:0.65%">UNCTAD/ASYCUDAWorld</span>
+    <span class="lbl" style="left:69.72%;top:0.59%">A OFFICE OF DESTINATION</span>
+    <span class="lbl" style="left:54.21%;top:2.14%">1 DECLARATION</span>
+
+    <!-- Polja 2, 8, 14 — lijevi blok -->
+    <span class="lbl" style="left:9.16%;top:4.28%">2 Exporter</span>
+    <span class="lbl" style="left:29.53%;top:4.05%">No.</span>
+    <span class="lbl" style="left:9.16%;top:13.19%">8 Consignee</span>
+    <span class="lbl" style="left:29.53%;top:12.95%">No.</span>
+    <span class="lbl" style="left:9.16%;top:21.62%">14 Declarant</span>
+    <span class="lbl" style="left:29.35%;top:21.62%">No.</span>
+
+    <!-- Desni stupac — polja 1,3-7,9-13 -->
+    <span class="lbl" style="left:54.21%;top:6.89%">3 Forms</span>
+    <span class="lbl" style="left:62.06%;top:6.89%">4 Load List</span>
+    <span class="lbl" style="left:69.72%;top:5.34%">Customs Reference</span>
+    <span class="lbl" style="left:69.72%;top:8.31%">Manifest</span>
+    <span class="lbl" style="left:54.21%;top:9.50%">5 Items</span>
+    <span class="lbl" style="left:62.06%;top:9.50%">6 Nbr packages</span>
+    <span class="lbl" style="left:72.34%;top:9.50%">7 Reference number</span>
+    <span class="lbl" style="left:54.21%;top:13.19%">9 Financial</span>
+    <span class="lbl" style="left:54.21%;top:18.29%">10 Cty f. dest</span>
+    <span class="lbl" style="left:63.18%;top:18.29%">11 Trading</span>
+    <span class="lbl" style="left:71.96%;top:18.29%">12 Value details</span>
+    <span class="lbl" style="left:92.34%;top:18.29%">13 C.A.P.</span>
+    <span class="lbl" style="left:54.21%;top:21.50%">15 Country of export</span>
+    <span class="lbl" style="left:74.77%;top:21.50%">15 C.E. Code</span>
+    <span class="lbl" style="left:86.17%;top:21.50%">17 C.D. Code</span>
+    <span class="lbl" style="left:54.21%;top:24.47%">16 Country of origin</span>
+    <span class="lbl" style="left:74.95%;top:24.47%">17 Country of destination</span>
+
+    <!-- Polja 18-24 transport + valuta -->
+    <span class="lbl" style="left:9.16%;top:27.55%">18 Identity and nationality of means of transport at arrival</span>
+    <span class="lbl" style="left:49.53%;top:27.55%">19 Ctr.</span>
+    <span class="lbl" style="left:54.21%;top:27.55%">20 Delivery terms</span>
+    <span class="lbl" style="left:9.16%;top:30.40%">21 Identity and nationality of active means of transport crossing the border</span>
+    <span class="lbl" style="left:54.21%;top:30.40%">22 Currency &amp; total amount invoiced</span>
+    <span class="lbl" style="left:76.45%;top:30.40%">23 Exch. rate</span>
+    <span class="lbl" style="left:88.60%;top:30.40%">24 Nature of</span>
+    <span class="lbl" style="left:88.60%;top:31.95%">transac.</span>
+
+    <!-- Polja 25-30 -->
+    <span class="lbl" style="left:8.79%;top:33.61%">25 Mode transport</span>
+    <span class="lbl" style="left:20.00%;top:33.61%">26 Inland mode</span>
+    <span class="lbl" style="left:31.40%;top:33.61%">27 Place of loading/unloading</span>
+    <span class="lbl" style="left:54.21%;top:33.61%">28 Financial and banking data</span>
+    <span class="lbl" style="left:9.16%;top:36.58%">29 Office of entry/exit</span>
+    <span class="lbl" style="left:31.40%;top:36.58%">30 Location of goods</span>
+
+    <!-- Polja 31-33 — opis + tarifni -->
+    <span class="lbl wrap" style="left:0.2%;top:39.31%">31 Packages and description of goods</span>
+    <span class="lbl" style="left:9.16%;top:39.31%">Marks and numbers – Containers No(s) – Number and kind</span>
+    <span class="lbl" style="left:57.38%;top:39.31%">32 Item</span>
+    <span class="lbl" style="left:62.99%;top:39.31%">No.</span>
+    <span class="lbl" style="left:65.79%;top:39.31%">33 Commodity code</span>
+    <span class="lbl" style="left:9.16%;top:40.65%">Marks &amp; no</span>
+    <span class="lbl" style="left:9.16%;top:43.76%">Number and Kind</span>
+    <span class="lbl" style="left:9.16%;top:47.03%">Containers No(s)</span>
+
+    <!-- Polja 34-39 -->
+    <span class="lbl" style="left:65.79%;top:42.16%">34 Cty. orig. Code</span>
+    <span class="lbl" style="left:65.61%;top:43.82%">a</span>
+    <span class="lbl" style="left:71.96%;top:43.82%">b</span>
+    <span class="lbl" style="left:77.01%;top:42.16%">35 Gross mass (kg)</span>
+    <span class="lbl" style="left:90.84%;top:42.16%">36 Prefer.</span>
+    <span class="lbl" style="left:65.79%;top:45.13%">37 PROCEDURE</span>
+    <span class="lbl" style="left:77.01%;top:45.13%">38 Net mass (kg)</span>
+    <span class="lbl" style="left:90.84%;top:45.13%">39 Quota</span>
+
+    <!-- Polja 40-43 -->
+    <span class="lbl" style="left:65.79%;top:48.10%">40 Summary declaration / Previous document</span>
+    <span class="lbl" style="left:94.58%;top:48.10%">S/L</span>
+    <span class="lbl" style="left:65.79%;top:51.07%">41 Supplementary units</span>
+    <span class="lbl" style="left:80.75%;top:50.77%">42 Item Price</span>
+    <span class="lbl" style="left:94.58%;top:50.77%">43 V.M.</span>
+    <span class="lbl" style="left:97.20%;top:52.43%">cod</span>
+
+    <!-- Polje 44 — lijevi stupac -->
+    <span class="lbl wrap" style="left:0.2%;top:52.61%">44 Add. info Documents Produced Certificates and authorization</span>
+    <span class="lbl" style="left:9.16%;top:52.85%">Licence No</span>
+    <span class="lbl" style="left:20.00%;top:52.85%">D.Val</span>
+    <span class="lbl" style="left:33.08%;top:52.85%">D.Qty</span>
+    <span class="lbl" style="left:9.16%;top:55.71%">A.D.</span>
+    <span class="lbl" style="left:78.69%;top:54.16%">A.I. Code</span>
+
+    <!-- Polja 45, 46 -->
+    <span class="lbl" style="left:86.17%;top:53.98%">45 Adjustment</span>
+    <span class="lbl" style="left:81.12%;top:56.89%">46 Statistical value</span>
+
+    <!-- Polje 47 — lijevi stupac + tabela -->
+    <span class="lbl wrap" style="left:0.2%;top:59.74%">47 Calculation of taxes</span>
+    <span class="lbl" style="left:8.79%;top:59.86%">Type</span>
+    <span class="lbl" style="left:13.46%;top:59.86%">Tax base</span>
+    <span class="lbl" style="left:26.73%;top:59.86%">Rate</span>
+    <span class="lbl" style="left:39.25%;top:59.86%">Amount</span>
+    <span class="lbl" style="left:51.59%;top:59.86%">MP</span>
+    <span class="lbl" style="left:54.21%;top:59.86%">48 Deferred payment</span>
+    <span class="lbl" style="left:77.01%;top:59.86%">49 Identification of warehouse</span>
+
+    <!-- Donji blok B, C, 50 -->
+    <span class="lbl" style="left:54.21%;top:63.30%">B ACCOUNTING DETAILS</span>
+    <span class="lbl" style="left:54.21%;top:64.96%">Mode of payment</span>
+    <span class="lbl" style="left:54.21%;top:66.63%">Assessment number / Date</span>
+    <span class="lbl" style="left:54.21%;top:68.29%">Receipt number</span>
+    <span class="lbl" style="left:84.67%;top:68.29%">Date</span>
+    <span class="lbl" style="left:54.21%;top:69.95%">Guarantee</span>
+    <span class="lbl" style="left:84.67%;top:69.95%">Date</span>
+    <span class="lbl" style="left:54.21%;top:71.62%">Total fees</span>
+    <span class="lbl" style="left:54.21%;top:73.28%">Total declaration</span>
+    <span class="lbl" style="left:25.98%;top:73.40%">Total</span>
+    <span class="lbl" style="left:68.41%;top:74.82%">C OFFICE OF DEPARTURE</span>
+    <span class="lbl" style="left:28.60%;top:74.88%">No.</span>
+    <span class="lbl" style="left:8.79%;top:75.06%">50 Principal</span>
+    <span class="lbl" style="left:8.79%;top:81.18%">Represented by</span>
+    <span class="lbl" style="left:8.79%;top:82.01%">Place and date</span>
+
+    <!-- Polja 51-54 -->
+    <span class="lbl wrap" style="left:0.2%;top:81.35%">51 Intended offices of transit and country</span>
+    <span class="lbl wrap" style="left:0.2%;top:86.34%">52 Guarantee not valid</span>
+    <span class="lbl" style="left:68.22%;top:86.58%">53 Office of destination and country</span>
+    <span class="lbl" style="left:64.49%;top:89.55%">54 Place and date</span>
+    <span class="lbl" style="left:64.49%;top:92.52%">Declarant name/representative</span>
+    <span class="lbl" style="left:1.50%;top:89.43%">D CONTROL BY OFFICE OF DESTINATION</span>
+    <span class="lbl" style="left:7.48%;top:93.82%">Signature</span>
+
+    <!-- Editabilna polja se generišu iz field_map.json u #fields-host -->
+    <div id="fields-host"></div>
+
+  </div><!-- /overlay -->
+</div><!-- /page-wrap -->
+
+<div id="field-tooltip"></div>
+
+<script>
+// ── Tooltip ─────────────────────────────────────────────────────────────────
+const tooltip = document.getElementById('field-tooltip');
+function showTooltip(text) {
+  if (!text) return;
+  tooltip.textContent = text;
+  tooltip.style.display = 'block';
+}
+function hideTooltip() { tooltip.style.display = 'none'; }
+
+// Build a label map: field top% → nearest label text (same row ±1.5%)
+function buildLabelMap(map) {
+  const lblEls = [...document.querySelectorAll('.lbl')];
+  const result = {};
+  map.forEach(f => {
+    const fieldTopPct = (f.bbox_png[1] / NAT_H) * 100;
+    let best = null, bestDist = 99;
+    lblEls.forEach(lbl => {
+      const lblTop = parseFloat(lbl.style.top);
+      const dist = Math.abs(lblTop - fieldTopPct);
+      if (dist < bestDist && dist < 2.5) { bestDist = dist; best = lbl; }
+    });
+    result[f.id] = best ? best.textContent.trim() : f.id;
+  });
+  return result;
+}
+
+// ── Konstante ───────────────────────────────────────────────────────────────
+const NAT_W = 2230, NAT_H = 3509;            // prirodna veličina pozadine (px)
+const params = new URLSearchParams(location.search);
+const shipmentId = params.get('id');
+
+// Polja koja se renderuju kao textarea (višelinijski / dugi opisi)
+const TEXTAREA_IDS = new Set([
+  'field_89','field_90','field_91',   // opis robe (polje 31)
+  'field_79',                          // obračun (polje 47)
+  'field_26','field_69',               // transport opisi
+  'field_60','field_80',               // dokumenta
+]);
+
+// Mapiranje field_map ID → ključ koji se snima/finalizuje (SAD box semantika)
+const SAVE_IDS = {
+  description: 'field_89',
+  tariff:      'field_40',
+  gross:       'field_56',
+  net:         'field_55',
+};
+
+let FIELD_MAP = [];           // sirovi field_map.json
+let _loadedData = null;       // raw meta+items za finalize payload
+
+// ── Generiši editabilna polja iz field_map.json ────────────────────────────
+function buildFields(map) {
+  const host = document.getElementById('fields-host');
+  host.innerHTML = '';
+  map.forEach(f => {
+    const [x0, y0, x1, y1] = f.bbox_png;
+    const left   = (x0 / NAT_W) * 100;
+    const top    = (y0 / NAT_H) * 100;
+    const width  = ((x1 - x0) / NAT_W) * 100;
+    const height = ((y1 - y0) / NAT_H) * 100;
+
+    const isTextarea = TEXTAREA_IDS.has(f.id);
+    const el = document.createElement(isTextarea ? 'textarea' : 'input');
+    el.id = f.id;
+    el.className = 'field f-sm';
+    el.dataset.value = f.value || '';
+    el.value = f.value || '';
+    el.spellcheck = false;
+    if (isTextarea) { el.style.whiteSpace = 'pre-wrap'; el.rows = 1; }
+    el.style.left   = left.toFixed(3)   + '%';
+    el.style.top    = top.toFixed(3)    + '%';
+    el.style.width  = width.toFixed(3)  + '%';
+    el.style.height = height.toFixed(3) + '%';
+
+    el.addEventListener('focus', () => { expandField(el); showTooltip(el.dataset.label || ''); });
+    el.addEventListener('blur',  () => { collapseField(el); hideTooltip(); });
+    host.appendChild(el);
+  });
+
+  // Assign labels after all .lbl elements are in DOM
+  const labelMap = buildLabelMap(map);
+  map.forEach(f => {
+    const el = document.getElementById(f.id);
+    if (el) el.dataset.label = labelMap[f.id] || '';
+  });
+
+  scaleFonts();
+}
+
+// Proširi polje preko granica boxa da pokaže cijeli sadržaj
+function expandField(el) {
+  el._w = el.style.width;
+  el._h = el.style.height;
+  // širina prema sadržaju
+  const need = Math.max(el.scrollWidth + 10, el.offsetWidth);
+  el.style.width = need + 'px';
+  if (el.tagName === 'TEXTAREA') {
+    el.style.height = 'auto';
+    el.style.height = (el.scrollHeight + 2) + 'px';
+  }
+}
+function collapseField(el) {
+  if (el._w) el.style.width = el._w;
+  if (el._h) el.style.height = el._h;
+}
+
+// ── Skaliranje fontova prema prikazanoj širini slike ───────────────────────
+function scaleFonts() {
+  const imgEl = document.getElementById('bgImg');
+  const displayW = imgEl.offsetWidth || 900;
+  const scale = displayW / NAT_W;
+  document.querySelectorAll('.field').forEach(el => {
+    if (el.classList.contains('f-lg')) el.style.fontSize = Math.round(14 * scale) + 'px';
+    else if (el.classList.contains('f-xs')) el.style.fontSize = Math.round(11 * scale) + 'px';
+    else el.style.fontSize = Math.round(13 * scale) + 'px';
+  });
+  const lblSize = Math.max(5, Math.round(7 * scale)) + 'px';
+  document.querySelectorAll('.lbl').forEach(el => el.style.fontSize = lblSize);
+}
+window.addEventListener('resize', scaleFonts);
+document.getElementById('bgImg').addEventListener('load', scaleFonts);
+
+// ── Live podaci → override ključnih polja iz field_map seed-a ───────────────
+function applyLiveData(meta, items) {
+  const it = (items || [])[0] || {};
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && val != null && String(val).trim() !== '') {
+      el.value = String(val);
+      el.dataset.value = String(val);
+      el.classList.add('live');
+    }
+  };
+  // Metapodaci
+  set('field_4',  meta.exporter || meta.exporter_name);
+  set('field_5',  meta.exporter_address);
+  set('field_8',  meta.consignee || meta.consignee_name);
+  set('field_9',  meta.consignee_address);
+  set('field_12', meta.declarant || meta.declarant_name);
+  set('field_13', meta.declarant_address);
+  set('field_45', meta.total_invoice_value);
+  set('field_46', meta.currency);
+  set('field_47', meta.exchange_rate);
+  set('field_48', meta.container_no);
+  // Stavka 1
+  set(SAVE_IDS.description, it.description || it.name);
+  set(SAVE_IDS.tariff,      it.tariff_code);
+  set(SAVE_IDS.gross,       it.gross_mass || it.gross_weight);
+  set(SAVE_IDS.net,         it.net_mass   || it.net_weight);
+  set('field_77',           it.item_price);
+
+  const liveCount = document.querySelectorAll('.field.live').length;
+  const totalCount = document.querySelectorAll('.field').length;
+  document.getElementById('toolbar-title').textContent =
+    `SAD Editor — ${meta.consignee || meta.consignee_name || '—'}`;
+  document.getElementById('toolbar-sub').textContent =
+    `${meta.declaration_date || ''} · ${meta.invoice_number ? 'Faktura: ' + meta.invoice_number : ''} · ${liveCount}/${totalCount} polja popunjena`;
+}
+
+// ── Učitaj field_map + (opciono) live podatke ──────────────────────────────
+async function init() {
+  try {
+    const r = await fetch('/static/field_map.json');
+    FIELD_MAP = await r.json();
+  } catch (e) {
+    document.getElementById('toolbar-title').textContent = `Greška: field_map.json — ${e.message}`;
+    return;
+  }
+  buildFields(FIELD_MAP);
+
+  if (!shipmentId) {
+    document.getElementById('toolbar-title').textContent = 'SAD Editor — primjer';
+    document.getElementById('toolbar-sub').textContent = 'Prikaz bez učitanog shipment-a (field_map seed)';
+    return;
+  }
+  try {
+    const resp = await fetch(`/pipeline/load-extracted/${shipmentId}`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const d = await resp.json();
+    const meta = d.metadata || {};
+    const items = d.items || [];
+    _loadedData = { _rawMeta: meta, _rawItems: items };
+    applyLiveData(meta, items);
+    document.getElementById('btn-finalize').style.display = '';
+  } catch (e) {
+    document.getElementById('toolbar-title').textContent = 'Greška pri učitavanju';
+    document.getElementById('toolbar-sub').textContent = e.message;
+  }
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+const get = id => document.getElementById(id)?.value || '';
+function setStatus(msg, color) {
+  const el = document.getElementById('status-msg');
+  el.textContent = msg;
+  el.style.color = color || '#adf';
+}
+function setBusy(busy) {
+  document.getElementById('btn-save').disabled = busy;
+  document.getElementById('btn-finalize').disabled = busy;
+}
+
+// ── Save → /pipeline/sad-update ─────────────────────────────────────────────
+async function saveChanges() {
+  if (!shipmentId) { setStatus('Primjer — izmjene nisu snimljene', '#fa8'); return; }
+  setBusy(true);
+  setStatus('Snimam…', '#adf');
+  try {
+    const resp = await fetch('/pipeline/sad-update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        shipment_id: parseInt(shipmentId),
+        f31_description: get(SAVE_IDS.description),
+        f33_tariff_code: get(SAVE_IDS.tariff),
+        f35_gross_mass:  get(SAVE_IDS.gross),
+        f38_net_mass:    get(SAVE_IDS.net),
+      }),
+    });
+    const d = await resp.json();
+    if (!resp.ok) throw new Error(d.detail || `HTTP ${resp.status}`);
+    setStatus(`Snimljeno (${d.updated_fields.join(', ')})`, '#6f6');
+    document.getElementById('btn-finalize').style.display = '';
+  } catch (e) {
+    setStatus(`Greška: ${e.message}`, '#f88');
+  } finally {
+    setBusy(false);
+  }
+}
+
+// ── Finalize → /pipeline/finalize/{id} ──────────────────────────────────────
+async function finalizeAndUpload() {
+  if (!shipmentId) { setStatus('Nema shipment_id', '#fa8'); return; }
+  if (!confirm('Potvrdi slanje na Drive. Ova akcija je nepovratna.')) return;
+
+  setBusy(true);
+  setStatus('⏳ Finalizacija u toku (30–60s)…', '#ffd');
+
+  const meta = (_loadedData && _loadedData._rawMeta) || {};
+  const origItems = (_loadedData && _loadedData._rawItems) || [];
+  const items = origItems.map((item, idx) => {
+    if (idx !== 0) return item;
+    return {
+      ...item,
+      description: get(SAVE_IDS.description) || item.description,
+      tariff_code: get(SAVE_IDS.tariff)      || item.tariff_code,
+      gross_weight: get(SAVE_IDS.gross)      || item.gross_weight,
+      net_weight:   get(SAVE_IDS.net)        || item.net_weight,
+      _edited: true,
+    };
+  });
+
+  try {
+    const resp = await fetch(`/pipeline/finalize/${shipmentId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items, metadata: meta }),
+    });
+    const d = await resp.json();
+    if (!resp.ok) throw new Error(d.detail || `HTTP ${resp.status}`);
+    if (d.warning) setStatus(`⚠ ${d.warning}`, '#fa8');
+    else setStatus('⏳ Obrada u pozadini…', '#ffd');
+    pollForResult();
+  } catch (e) {
+    setStatus(`Greška: ${e.message}`, '#f88');
+    setBusy(false);
+  }
+}
+
+// ── Poll dok backend ne završi ─────────────────────────────────────────────
+async function pollForResult() {
+  for (let i = 0; i < 30; i++) {
+    await new Promise(r => setTimeout(r, 3000));
+    try {
+      const resp = await fetch(`/pipeline/pending`);
+      const list = await resp.json();
+      const row = (list.shipments || list || []).find(s => String(s.id) === String(shipmentId));
+      if (!row) break;
+      if (row.status === 'uploaded') {
+        const link = row.drive_url || '';
+        if (link) {
+          document.getElementById('status-msg').innerHTML =
+            `✅ Drive: <a href="${link}" target="_blank" style="color:#6ff">otvori folder</a>`;
+        } else {
+          setStatus('✅ Uploadano na Drive!', '#6f6');
+        }
+        setBusy(false);
+        document.getElementById('btn-finalize').style.display = 'none';
+        return;
+      }
+      if (row.status !== 'extracted') break;
+    } catch (_) {}
+  }
+  setStatus('Provjeri /pipeline/log za status', '#fa8');
+  setBusy(false);
+}
+
+init();
+</script>
+</body>
+</html>

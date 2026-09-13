@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="UTF-8">
+<title>SAD/JCI Mockup — NERMUS DOO (hardcoded)</title>
+<style>
+  /*
+    UNCTAD/ASYCUDA World SAD obrazac — statički mockup
+    Vizualno identično originalu (NERMUS DOO):
+      outer border:    2px solid black
+      cell border:     0.8px solid dark gray (#3a3a3a)
+      cell bg:         WHITE
+      label text:      teal/green (#1f5f5f)
+      value text:      black
+  */
+  * { box-sizing: border-box; }
+  body {
+    background: #d0d0c8;
+    font-family: 'Arial', 'Helvetica', sans-serif;
+    margin: 0;
+    padding: 24px;
+    color: #000;
+  }
+  .sad {
+    background: #fff;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0;
+    border: 3px solid #000;
+    box-shadow: 0 2px 12px rgba(0,0,0,.18);
+  }
+  /* generic cell — svaka kućica obrasca (bijela pozadina, tanki tamno-sivi okvir) */
+  .c {
+    border: 0.8px solid #3a3a3a;
+    background: #fff;
+    padding: 2px 4px;
+    position: relative;
+    min-height: 22px;
+    font-size: 9px;
+    line-height: 1.2;
+    overflow: hidden;
+  }
+  /* polje broj — mali bold u uglu, teal tekst (boja kao u PDF-u) */
+  .n {
+    font-size: 7.5px;
+    font-weight: 700;
+    color: #1f5f5f;
+    margin-right: 3px;
+    white-space: nowrap;
+  }
+  /* polje label — mali teal tekst */
+  .lbl {
+    font-size: 7.5px;
+    color: #1f5f5f;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .lbl-stack {
+    font-size: 7.5px;
+    color: #1f5f5f;
+    font-weight: 600;
+    line-height: 1.15;
+  }
+  /* polje vrijednost — crna boja */
+  .v { font-size: 9.5px; color: #000; margin-top: 1px; word-break: break-word; }
+  .v-bold { font-weight: 700; font-size: 12px; letter-spacing: 1px; }
+
+  .row { display: grid; gap: 0; }
+
+  /* spajanje stanica bez razmaka (cells share borders) */
+  .row > .c + .c { border-left: 0; }
+  .row + .row > .c { border-top: 0; }
+  .col > .c + .c { border-top: 0; }
+  .col { display: flex; flex-direction: column; }
+
+  /* header */
+  .row-header { grid-template-columns: 1fr 180px 220px; }
+  .header-logo {
+    background: #fff;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-right: 0;
+  }
+  .header-logo .title { font-weight: 700; font-size: 11px; }
+  .barcode {
+    font-family: 'Courier New', monospace;
+    font-weight: 900;
+    font-size: 22px;
+    letter-spacing: -2px;
+    line-height: 1;
+    margin-top: 6px;
+    overflow: hidden;
+    color: #000;
+  }
+
+  /* row layout — left half = primalac/exporter/declarant, right half = ostalo */
+  .split-2 { grid-template-columns: 1fr 1fr; }
+  .split-leftheavy { grid-template-columns: 380px 1fr; }
+  .split-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .split-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  /* podgrupe (npr. forms+load+ref u jednoj polju) */
+  .sub { display: grid; gap: 0; }
+  .sub > .c { background: #fff; }
+  .sub > .c + .c { border-left: 0; }
+  .sub + .sub > .c { border-top: 0; }
+
+  /* itemu — packages + commodity right */
+  .item-block { display: grid; grid-template-columns: 1.4fr 1fr; gap: 0; }
+  .item-block > .col > .c + .c { border-top: 0; }
+
+  /* tax table */
+  .tax {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 9px;
+  }
+  .tax th, .tax td {
+    border: 0.8px solid #3a3a3a;
+    padding: 2px 5px;
+    text-align: left;
+    background: #fff;
+  }
+  .tax th {
+    font-size: 7.5px;
+    color: #1f5f5f;
+    font-weight: 600;
+    background: #fff;
+  }
+  .tax td.r { text-align: right; }
+  .tax tr.total td { font-weight: 700; }
+
+  /* lijeva vertikalna kolona — labele 31/44/47 rotirane (kao u originalu) */
+  .item-wrap { display: grid; grid-template-columns: 20px 1fr; }
+  .v-strip {
+    display: grid;
+    border-right: 1.5px solid #000;
+    border-bottom: 0;
+    background: #fff;
+  }
+  .v-label {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 7.5px;
+    color: #1f5f5f;
+    font-weight: 600;
+    text-align: left;
+    padding: 6px 3px;
+    border-bottom: 0.8px solid #3a3a3a;
+    line-height: 1.25;
+    white-space: nowrap;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+  .v-label:last-child { border-bottom: 0; }
+  .v-label .n { font-size: 8.5px; margin-right: 0; margin-bottom: 4px; }
+
+  /* deblji crni okvir za glavne separatore između blokova */
+  .thick-bottom { border-bottom: 2px solid #000 !important; }
+  .thick-top    { border-top:    2px solid #000 !important; }
+  /* Kad row ima thick-bottom, njegova zadnja cell-a treba istu liniju */
+  .thick-bottom > .c { border-bottom: 2px solid #000 !important; }
+
+  .footer-line {
+    margin: 6px 8px 8px;
+    padding-top: 6px;
+    border-top: 0.8px dashed #555;
+    font-size: 9px;
+    color: #1f5f5f;
+    text-align: right;
+  }
+
+  /* page 2 prikaz */
+  .page-sep {
+    margin: 28px 0;
+    height: 1px;
+    background: #999;
+    position: relative;
+  }
+  .page-sep::after {
+    content: "STRANA 2 — nastavak (ostale stavke)";
+    position: absolute;
+    top: -8px; left: 50%; transform: translateX(-50%);
+    background: #d8d8d0;
+    padding: 0 12px;
+    font-size: 10px;
+    color: #555;
+  }
+</style>
+</head>
+<body>
+
+<div class="sad">
+
+  <!-- ────────── HEADER ROW: UNCTAD | 1 Declaration | A Office ────────── -->
+  <div class="row row-header">
+    <div class="c header-logo">
+      <span class="title">UNCTAD/ASYCUDAWorld</span>
+      <div class="barcode">||| | ||||| || ||| ||| | |||||||| || |||||</div>
+    </div>
+    <div class="c">
+      <span class="n">1</span><span class="lbl">DEKLARACIJA</span>
+      <div class="v v-bold" style="margin-top:4px">IM &nbsp;&nbsp; H</div>
+    </div>
+    <div class="c">
+      <div class="lbl">A CARINARNICA ODREDIŠTA</div>
+      <div class="v" style="margin-top:6px">BA010301</div>
+      <div class="v">CI Tuzla</div>
+    </div>
+  </div>
+
+  <!-- ────────── ROW: Exporter + (Forms+Items+Ref) ────────── -->
+  <div class="row split-leftheavy thick-bottom">
+    <div class="c" style="min-height:90px">
+      <span class="n">2</span><span class="lbl">Izvoznik</span>
+      <span class="lbl" style="float:right">No. 210027710009</span>
+      <div class="v" style="margin-top:6px">NINGBO XINJUZHENG IM&amp;EXP CO LTD</div>
+      <div class="v">NINGBO/KINA</div>
+      <div class="v">796 YAOGA ROAD</div>
+    </div>
+    <div class="col">
+      <div class="sub" style="grid-template-columns: 70px 70px 1fr">
+        <div class="c">
+          <span class="n">3</span><span class="lbl">Obrasci</span>
+          <div class="v" style="margin-top:4px">1 &nbsp; 2</div>
+        </div>
+        <div class="c">
+          <span class="n">4</span><span class="lbl">Specifikacija</span>
+          <div class="v" style="margin-top:4px">2</div>
+        </div>
+        <div class="c">
+          <span class="lbl">Carinski ref. broj</span>
+          <div class="v" style="margin-top:4px">26BA010301006396H0 &nbsp; 04/05/2026</div>
+          <div class="lbl" style="margin-top:6px">Manifest</div>
+        </div>
+      </div>
+      <div class="sub" style="grid-template-columns: 70px 1fr 1fr;border-top:0">
+        <div class="c">
+          <span class="n">5</span><span class="lbl">Stavke</span>
+          <div class="v" style="margin-top:4px">2</div>
+        </div>
+        <div class="c">
+          <span class="n">6</span><span class="lbl">Broj koleta</span>
+          <div class="v" style="margin-top:4px">920</div>
+        </div>
+        <div class="c">
+          <span class="n">7</span><span class="lbl">Referentni broj</span>
+          <div class="v" style="margin-top:4px">2026 &nbsp;&nbsp; 2026050</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────── ROW: Consignee + (Financial / 10-11-12-13) ────────── -->
+  <div class="row split-leftheavy thick-bottom">
+    <div class="c" style="min-height:80px">
+      <span class="n">8</span><span class="lbl">Primalac</span>
+      <span class="lbl" style="float:right">No. 210027710009</span>
+      <div class="v" style="margin-top:6px">NERMUS DOO</div>
+      <div class="v">BRČKO DISTRIKT BIH</div>
+      <div class="v">CERIK BB</div>
+    </div>
+    <div class="col">
+      <div class="c" style="min-height:40px">
+        <span class="n">9</span><span class="lbl">Finansijski</span>
+        <span class="lbl" style="float:right">No.</span>
+      </div>
+      <div class="sub" style="grid-template-columns: 1fr 1fr 1.4fr 70px 60px;border-top:0">
+        <div class="c">
+          <span class="n">10</span>
+          <div class="lbl">Zemlja odredišta</div>
+        </div>
+        <div class="c">
+          <span class="n">11</span>
+          <div class="lbl">Trgovinska zemlja</div>
+        </div>
+        <div class="c">
+          <span class="n">12</span><span class="lbl">Detalji vrijednosti</span>
+          <div class="v" style="margin-top:8px"><span class="lbl">preth.</span> &nbsp; 14,810.55</div>
+        </div>
+        <div class="c">
+          <div class="lbl">zemlja</div>
+        </div>
+        <div class="c">
+          <span class="n">13</span>
+          <div class="lbl">C.A.P.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────── ROW: Declarant + (Country export + CE/CD codes + Origin/Destination) ────────── -->
+  <div class="row split-leftheavy thick-bottom">
+    <div class="c" style="min-height:80px">
+      <span class="n">14</span><span class="lbl">Deklarant</span>
+      <span class="lbl" style="margin-left:8px">2</span>
+      <span class="lbl" style="float:right">No. 209047630003</span>
+      <div class="v" style="margin-top:6px">MULTIŠPED DOO</div>
+      <div class="v">SREBRENIK</div>
+      <div class="v">MEHMEDALIJE MAKA DIZDARA 11</div>
+    </div>
+    <div class="col">
+      <div class="sub" style="grid-template-columns: 1fr 50px 50px 50px 50px">
+        <div class="c">
+          <span class="n">15</span><span class="lbl">Zemlja izvoza</span>
+          <div class="v" style="margin-top:4px">KINA</div>
+        </div>
+        <div class="c">
+          <span class="n">15</span><span class="lbl">C.E.</span>
+          <div class="lbl" style="margin-top:6px">a&nbsp;CN&nbsp;</div>
+          <div class="lbl">b&nbsp;|</div>
+        </div>
+        <div class="c">
+          <span class="lbl">Šifra</span>
+        </div>
+        <div class="c">
+          <span class="n">17</span><span class="lbl">C.D.</span>
+          <div class="lbl" style="margin-top:6px">a&nbsp;|</div>
+          <div class="lbl">b&nbsp;|</div>
+        </div>
+        <div class="c">
+          <span class="lbl">Šifra</span>
+        </div>
+      </div>
+      <div class="sub" style="grid-template-columns: 1fr 1fr;border-top:0">
+        <div class="c">
+          <span class="n">16</span><span class="lbl">Zemlja porijekla</span>
+          <div class="v" style="margin-top:4px">KINA</div>
+        </div>
+        <div class="c">
+          <span class="n">17</span><span class="lbl">Zemlja odredišta</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────── ROW: 18 Identity arrival + 19 Ctr + 20 Delivery ────────── -->
+  <div class="row" style="grid-template-columns: 1fr 60px 200px">
+    <div class="c">
+      <span class="n">18</span><span class="lbl">Identitet i nacionalnost prevoznog sredstva pri dolasku</span>
+      <div class="v" style="margin-top:4px">"RAZNO PRIJEV.SREDS.-99211" &nbsp;&nbsp; BA</div>
+    </div>
+    <div class="c">
+      <span class="n">19</span><span class="lbl">Kont.</span>
+      <div class="v" style="margin-top:4px">yes</div>
+    </div>
+    <div class="c">
+      <span class="n">20</span><span class="lbl">Uslovi isporuke</span>
+      <div class="v" style="margin-top:4px">FOB &nbsp; NINGBO</div>
+    </div>
+  </div>
+
+  <!-- ────────── ROW: 21 Identity border + 22 Currency + 23 Exch + 24 Nature ────────── -->
+  <div class="row" style="grid-template-columns: 1fr 200px 90px 60px">
+    <div class="c">
+      <span class="n">21</span><span class="lbl">Identitet i nacionalnost aktivnog prevoznog sredstva pri prelasku granice</span>
+      <div class="v" style="margin-top:4px">"RAZNO PRIJEV.SREDS.-99211" &nbsp;&nbsp; BA</div>
+    </div>
+    <div class="c">
+      <span class="n">22</span><span class="lbl">Valuta i ukupan fakturisani iznos</span>
+      <div class="v" style="margin-top:4px">USD &nbsp; 101,798.46</div>
+    </div>
+    <div class="c">
+      <span class="n">23</span><span class="lbl">Kurs</span>
+      <div class="v" style="margin-top:4px">1.671364</div>
+    </div>
+    <div class="c">
+      <span class="n">24</span><span class="lbl">Vrsta</span>
+      <div class="v" style="margin-top:4px">1 &nbsp; 1</div>
+      <div class="lbl">transakcije</div>
+    </div>
+  </div>
+
+  <!-- ────────── ROW: 25 Mode + 26 Inland + 27 Place + 28 Financial banking ────────── -->
+  <div class="row" style="grid-template-columns: 90px 90px 1fr 1fr">
+    <div class="c">
+      <span class="n">25</span><span class="lbl">Vrsta prevoza</span>
+      <div class="lbl" style="font-weight:400;margin-top:2px">na granici</div>
+      <div class="v" style="margin-top:4px">30</div>
+    </div>
+    <div class="c">
+      <span class="n">26</span><span class="lbl">Unutrašnji prevoz</span>
+      <div class="lbl" style="font-weight:400;margin-top:2px">prevoz</div>
+      <div class="v" style="margin-top:4px">30</div>
+    </div>
+    <div class="c">
+      <span class="n">27</span><span class="lbl">Mjesto utovara/istovara</span>
+    </div>
+    <div class="c">
+      <span class="n">28</span><span class="lbl">Finansijski i bankovni podaci</span>
+      <span class="lbl" style="float:right">Banka</span>
+      <div class="lbl" style="margin-top:10px;font-weight:400">Uslovi plaćanja</div>
+    </div>
+  </div>
+
+  <!-- ────────── ROW: 29 Office entry + 30 Location of goods ────────── -->
+  <div class="row" style="grid-template-columns: 1fr 1fr">
+    <div class="c">
+      <span class="n">29</span><span class="lbl">Carinarnica ulaza/izlaza</span>
+      <div class="v" style="margin-top:4px">BA010206 &nbsp;&nbsp; CR/GP Donji Svilaj</div>
+    </div>
+    <div class="c">
+      <span class="n">30</span><span class="lbl">Lokacija robe</span>
+    </div>
+  </div>
+
+  <!-- ────────── ITEM BLOCK SA LIJEVOM VERTIKALNOM KOLONOM (31, 44) ────────── -->
+  <div class="item-wrap thick-top">
+    <div class="v-strip">
+      <div class="v-label"><span class="n">31</span>&nbsp;Koleta i opis robe</div>
+      <div class="v-label"><span class="n">44</span>&nbsp;Dodatne info / Priloženi dokumenti / Certifikati / Ovlaštenja</div>
+    </div>
+  <div class="item-block" style="margin-top:0">
+    <!-- LIJEVO: 31 Packages + description + 44 Add info (bez labela jer su sad vertikalno) -->
+    <div class="col">
+      <div class="c" style="min-height:160px">
+        <span class="lbl" style="float:right">Br.</span>
+        <div style="display:grid;grid-template-columns:80px 1fr;gap:2px;font-size:10px">
+          <div class="lbl" style="font-weight:600">Oznake i br</div><div class="v" style="margin:0">1</div>
+          <div class="lbl" style="font-weight:600">od</div><div class="v" style="margin:0">POŠILJKA</div>
+          <div class="lbl" style="font-weight:600">Broj i</div><div class="v" style="margin:0">525 &nbsp; PK</div>
+          <div class="lbl" style="font-weight:600">Vrsta</div><div class="v" style="margin:0">Pakovanje</div>
+          <div class="lbl" style="font-weight:600">Br. kontejnera</div><div class="v" style="margin:0">HLBU1172821</div>
+        </div>
+        <div class="v" style="margin-top:6px;border-top:0.6px dashed #555;padding-top:4px;line-height:1.4">
+          Ostali proizvodi za unutrašnje opremanje:<br>
+          PREKRIVAČI ZA NAMJEŠTAJ-4941 SET,<br>
+          NAVLAKE ZA JASTUKE-2200 KOM
+        </div>
+      </div>
+      <div class="c">
+        <div style="display:grid;grid-template-columns:90px 1fr 60px 60px;gap:0;font-size:10px">
+          <div class="lbl">Br. licence</div>
+          <div class="lbl">D.Val</div>
+          <div class="lbl">D.Qty</div>
+          <div></div>
+          <div></div>
+          <div class="v" style="margin:0;grid-column:span 3">6,509.08+562.04+87.80+708.37-87.80</div>
+          <div class="lbl">A.D.</div>
+          <div class="v" style="margin:0;grid-column:span 3">N380 DIS DV1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DESNO: 32 Item, 33 Commodity, 34 Cty, 35 Gross, 37 Procedure, 38 Net, 40 Summary, 41 Suppl, 42 Item Price, 45 Adj, 46 Stat -->
+    <div class="col">
+      <div class="sub" style="grid-template-columns: 60px 1fr 60px">
+        <div class="c">
+          <span class="n">32</span><span class="lbl">Stavka</span>
+          <div class="v" style="margin-top:4px">1</div>
+          <div class="lbl" style="margin-top:6px">No.</div>
+        </div>
+        <div class="c">
+          <span class="n">33</span><span class="lbl">Tarifna oznaka</span>
+          <div class="v" style="margin-top:4px">63049900</div>
+        </div>
+        <div class="c">
+          <div class="v" style="margin-top:14px">000</div>
+        </div>
+      </div>
+      <div class="sub" style="grid-template-columns: 30px 30px 1fr 1fr;border-top:0">
+        <div class="c">
+          <span class="n">34</span>
+          <div class="lbl">a</div>
+          <div class="v" style="margin-top:6px">CN</div>
+        </div>
+        <div class="c">
+          <div class="lbl">Zem.</div>
+          <div class="lbl">por.</div>
+          <div class="lbl">Šifra</div>
+          <div class="lbl" style="margin-top:6px">b |</div>
+        </div>
+        <div class="c">
+          <span class="n">35</span><span class="lbl">Bruto masa (kg)</span>
+          <div class="v" style="margin-top:4px">10,965.54</div>
+        </div>
+        <div class="c">
+          <span class="n">36</span>
+          <div class="lbl">Preferencijal</div>
+        </div>
+      </div>
+      <div class="sub" style="grid-template-columns: 50px 50px 1fr 60px;border-top:0">
+        <div class="c">
+          <span class="n">37</span>
+          <div class="lbl">POST.</div>
+          <div class="v" style="margin-top:4px">4000</div>
+        </div>
+        <div class="c">
+          <div class="v" style="margin-top:14px">000</div>
+        </div>
+        <div class="c">
+          <span class="n">38</span><span class="lbl">Neto masa (kg)</span>
+          <div class="v" style="margin-top:4px">10,965.54</div>
+        </div>
+        <div class="c">
+          <span class="n">39</span>
+          <div class="lbl">Kvota</div>
+        </div>
+      </div>
+      <div class="c">
+        <span class="n">40</span><span class="lbl">Skraćena deklaracija / Prethodni dokument</span>
+        <span class="lbl" style="float:right">S/L</span>
+        <div class="v" style="margin-top:4px">"RAZNO DOKUMENTA-99211" &nbsp;&nbsp; 1</div>
+      </div>
+      <div class="sub" style="grid-template-columns: 1fr 1fr 60px;border-top:0">
+        <div class="c">
+          <span class="n">41</span><span class="lbl">Dopunske jedinice</span>
+        </div>
+        <div class="c">
+          <span class="n">42</span><span class="lbl">Cijena stavke</span>
+          <div class="v" style="margin-top:4px">53,471.38</div>
+        </div>
+        <div class="c">
+          <span class="n">43</span>
+          <div class="lbl">V.M.</div>
+          <div class="lbl" style="margin-top:6px">kod</div>
+        </div>
+      </div>
+      <div class="sub" style="grid-template-columns: 1fr 70px;border-top:0">
+        <div class="c">
+          <span class="lbl">A.I. Šifra</span>
+        </div>
+        <div class="c">
+          <span class="n">45</span><span class="lbl">Usklađivanje</span>
+          <div class="v" style="margin-top:4px">1.000000</div>
+        </div>
+      </div>
+      <div class="c">
+        <span class="n">46</span><span class="lbl">Statistička vrijednost</span>
+        <div class="v" style="margin-top:4px">96,587.59</div>
+      </div>
+    </div>
+  </div>
+  </div>
+  <!-- ────────── /ITEM WRAP (zatvaranje 31/44 v-strip wrapper) ────────── -->
+
+  <!-- ────────── BOTTOM BLOCK SA 47 v-strip + tax + accounting ────────── -->
+  <div class="item-wrap thick-top">
+    <div class="v-strip">
+      <div class="v-label"><span class="n">47</span>&nbsp;Obračun dažbina</div>
+    </div>
+  <div class="row" style="grid-template-columns: 1.4fr 1fr">
+    <!-- 47 Calculation of taxes -->
+    <div class="c" style="padding:0">
+      <table class="tax">
+        <thead>
+          <tr>
+            <th>Vrsta</th>
+            <th>Osnovica</th>
+            <th>Stopa</th>
+            <th>Iznos</th>
+            <th>NP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>001</td><td class="r">96,587.59</td><td class="r">15.00</td><td class="r">14,488.14</td><td class="r">1</td>
+          </tr>
+          <tr>
+            <td>090</td><td class="r">111,637.77</td><td class="r">17.00</td><td class="r">18,978.42</td><td class="r">1</td>
+          </tr>
+          <tr><td colspan="5" style="height:48px"></td></tr>
+          <tr class="total">
+            <td colspan="3" style="text-align:right">Ukupno</td>
+            <td class="r">33,466.56</td>
+            <td class="r">1</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 48 Deferred + 49 Warehouse + B Accounting details -->
+    <div class="col">
+      <div class="sub" style="grid-template-columns: 1fr 1fr">
+        <div class="c">
+          <span class="n">48</span><span class="lbl">Odgođeno plaćanje</span>
+          <div class="v" style="margin-top:4px">1303060101</div>
+        </div>
+        <div class="c">
+          <span class="n">49</span><span class="lbl">Identifikacija skladišta</span>
+        </div>
+      </div>
+      <div class="c" style="border-top:0">
+        <div class="lbl" style="font-weight:700">B RAČUNOVODSTVENI PODACI</div>
+        <div style="margin-top:6px;display:grid;grid-template-columns:120px 1fr 60px 80px;gap:3px;font-size:10px">
+          <div class="lbl">Način plaćanja</div>
+          <div class="v" style="margin:0">PLAANJE</div>
+          <div></div>
+          <div></div>
+
+          <div class="lbl">Broj rješenja</div>
+          <div class="v" style="margin:0">L &nbsp; 15450</div>
+          <div class="lbl">/ Datum</div>
+          <div class="v" style="margin:0">04/05/2026</div>
+
+          <div class="lbl">Broj uplate</div>
+          <div class="v" style="margin:0">R &nbsp; 6597</div>
+          <div class="lbl">Datum</div>
+          <div class="v" style="margin:0">12/05/2026</div>
+
+          <div class="lbl">Garancija</div>
+          <div class="v" style="margin:0">0.00</div>
+          <div class="lbl">BAM</div>
+          <div class="lbl">Datum</div>
+
+          <div class="lbl">Ukupno takse</div>
+          <div class="v" style="margin:0">0.00</div>
+          <div class="lbl">BAM</div>
+          <div></div>
+
+          <div class="lbl" style="font-weight:700">Ukupno deklaracija</div>
+          <div class="v" style="margin:0;font-weight:700">63,713.41</div>
+          <div class="lbl">BAM</div>
+          <div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+  <!-- ────────── /ITEM WRAP (zatvaranje 47 v-strip wrapper) ────────── -->
+
+  <!-- ────────── FOOTER ROW: 50 Principal + C Office + 51 Intended + 52 Guarantee + D Control + 53/54 ────────── -->
+  <div class="row split-2">
+    <div class="c" style="min-height:60px">
+      <span class="n">50</span><span class="lbl">Glavni obveznik</span>
+      <span class="lbl" style="margin-left:80px">Br.</span>
+      <span class="lbl" style="float:right">Potpis</span>
+    </div>
+    <div class="c" style="min-height:60px">
+      <span class="lbl" style="font-weight:700">C OTPREMNA CARINARNICA</span>
+    </div>
+  </div>
+  <div class="row split-2">
+    <div class="c" style="min-height:50px">
+      <span class="n">51</span><span class="lbl">Predviđene</span>
+      <div class="lbl-stack" style="margin-top:2px">tranzitne<br>carinarnice<br>i zemlje</div>
+      <span style="display:block;margin-top:4px"><span class="lbl">Zastupan od</span> &nbsp; <span class="lbl">Mjesto i datum</span></span>
+    </div>
+    <div class="c" style="min-height:50px"></div>
+  </div>
+  <div class="row split-2">
+    <div class="c" style="min-height:40px">
+      <span class="n">52</span><span class="lbl">Garancija</span>
+      <div class="lbl" style="margin-top:2px">nije validna</div>
+    </div>
+    <div class="c" style="min-height:40px">
+      <span class="n">53</span><span class="lbl">Carinarnica odredišta i zemlja</span>
+    </div>
+  </div>
+  <div class="row split-2">
+    <div class="c" style="min-height:90px">
+      <span class="lbl" style="font-weight:700">D KONTROLA CARINARNICE ODREDIŠTA</span>
+      <span class="lbl" style="margin-left:40px">Pečat:</span>
+      <div style="margin-top:50px"><span class="lbl">Potpis</span></div>
+    </div>
+    <div class="c" style="min-height:90px">
+      <span class="n">54</span><span class="lbl">Mjesto i datum</span>
+      <div style="margin-top:50px"><span class="lbl">Ime deklaranta/zastupnika</span></div>
+    </div>
+  </div>
+
+  <div class="footer-line">Štampano: 13/05/2026 15:13 &nbsp;&nbsp;&nbsp; 1</div>
+</div>
+
+<!-- ──────────────────────────────────────────────────────────────────── -->
+<!-- STRANA 2 — nastavak (Item 2, Item 3 placeholder, Totals)              -->
+<!-- ──────────────────────────────────────────────────────────────────── -->
+<div class="page-sep"></div>
+
+<div class="sad">
+  <!-- Top continuation header — manifest + customs ref + form info -->
+  <div class="row" style="grid-template-columns: 1fr 180px 220px">
+    <div class="c header-logo">
+      <span class="title">UNCTAD/ASYCUDAWorld</span>
+      <div class="barcode">||| | ||||| || ||| ||| | |||||||| || |||||</div>
+    </div>
+    <div class="c">
+      <span class="n">1</span><span class="lbl">DEKLARACIJA</span>
+      <div class="v v-bold" style="margin-top:4px">IM &nbsp;&nbsp; H</div>
+    </div>
+    <div class="c">
+      <div class="lbl">A CARINARNICA ODREDIŠTA</div>
+      <div class="v" style="margin-top:6px">BA010301</div>
+      <div class="v">CI Tuzla</div>
+    </div>
+  </div>
+
+  <div class="row" style="grid-template-columns: 1fr 1fr 1fr">
+    <div class="c">
+      <span class="lbl">Manifest</span>
+      <div class="v" style="margin-top:4px">&nbsp;</div>
+      <span class="lbl">Carinski ref. broj</span>
+      <div class="v" style="margin-top:4px">26BA010301006396H0 &nbsp; 04/05/2026</div>
+      <span class="lbl" style="margin-top:6px;display:block">7 Referentni broj</span>
+      <div class="v" style="margin-top:2px">2026 &nbsp;&nbsp; 2026050</div>
+    </div>
+    <div class="c">
+      <span class="n">3</span><span class="lbl">Obrasci</span>
+      <div class="v" style="margin-top:4px">2 &nbsp; 2</div>
+    </div>
+    <div class="c">
+      <span class="lbl">BA010301</span>
+      <div class="v">CI Tuzla</div>
+    </div>
+  </div>
+
+  <!-- ITEM 2 (popunjen) — sa lijevom vertikalnom kolonom -->
+  <div class="item-wrap thick-top">
+    <div class="v-strip">
+      <div class="v-label"><span class="n">31</span>&nbsp;Koleta i opis robe</div>
+      <div class="v-label"><span class="n">44</span>&nbsp;Dodatne info / Priloženi dokumenti</div>
+    </div>
+  <div class="item-block">
+    <div class="col">
+      <div class="c" style="min-height:160px">
+        <div style="display:grid;grid-template-columns:80px 1fr;gap:2px;font-size:10px">
+          <div class="lbl" style="font-weight:600">Oznake i br</div><div class="v" style="margin:0">1</div>
+          <div class="lbl" style="font-weight:600">od</div><div class="v" style="margin:0">POŠILJKA</div>
+          <div class="lbl" style="font-weight:600">Br. i vrsta</div><div class="v" style="margin:0">395 &nbsp; PK &nbsp; Pakovanje</div>
+          <div class="lbl" style="font-weight:600">Br. kontejnera</div><div class="v" style="margin:0">HLBU1172821</div>
+        </div>
+        <div class="v" style="margin-top:8px;border-top:1px dashed #3a3a3a;padding-top:6px;line-height:1.4">
+          Ostali proizvodi za unutrašnje opremanje:<br>
+          PREKRIVAČI ZA NAMJEŠTAJ-3383 SET,<br>
+          NAVLAKE ZA JASTUKE-4510 KOM
+        </div>
+      </div>
+      <div class="c">
+        <div style="display:grid;grid-template-columns:80px 1fr;gap:0;font-size:10px">
+          <div class="lbl">Br. licence / D.Val:</div>
+          <div class="v" style="margin:0">5,882.86+507.96+79.34+640.23-79.34</div>
+          <div class="lbl">A.D.:</div>
+          <div class="v" style="margin:0">N380 DIS DV1</div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="sub" style="grid-template-columns: 60px 1fr 60px">
+        <div class="c"><span class="n">32</span><span class="lbl">Stavka</span><div class="v">2</div></div>
+        <div class="c"><span class="n">33</span><span class="lbl">Tarifna oznaka</span><div class="v">63049900</div></div>
+        <div class="c"><div class="v" style="margin-top:14px">000</div></div>
+      </div>
+      <div class="sub" style="grid-template-columns: 60px 1fr 1fr;border-top:0">
+        <div class="c"><span class="n">34</span><span class="lbl">Zem.</span><div class="v">CN</div></div>
+        <div class="c"><span class="n">35</span><span class="lbl">Bruto masa (kg)</span><div class="v">10,411.68</div></div>
+        <div class="c"><span class="n">36</span><span class="lbl">Preferencijal</span></div>
+      </div>
+      <div class="sub" style="grid-template-columns: 60px 60px 1fr 60px;border-top:0">
+        <div class="c"><span class="n">37</span><span class="lbl">POST</span><div class="v">4000</div></div>
+        <div class="c"><div class="v" style="margin-top:14px">000</div></div>
+        <div class="c"><span class="n">38</span><span class="lbl">Neto masa</span><div class="v">10,411.68</div></div>
+        <div class="c"><span class="n">39</span><span class="lbl">Kvota</span></div>
+      </div>
+      <div class="c">
+        <span class="n">40</span><span class="lbl">Skraćena deklaracija / Prethodni dokument</span>
+        <span class="lbl" style="float:right">S/L</span>
+        <div class="v" style="margin-top:4px">"RAZNO DOKUMENTA-99211" &nbsp;&nbsp; 1</div>
+      </div>
+      <div class="sub" style="grid-template-columns: 1fr 1fr 60px;border-top:0">
+        <div class="c"><span class="n">41</span><span class="lbl">Dop. jedinice</span></div>
+        <div class="c"><span class="n">42</span><span class="lbl">Cijena stavke</span><div class="v">48,327.08</div></div>
+        <div class="c"><span class="n">43</span><span class="lbl">V.M. kod</span></div>
+      </div>
+      <div class="c">
+        <span class="n">46</span><span class="lbl">Statistička vrijednost</span>
+        <div class="v">87,295.23</div>
+      </div>
+    </div>
+  </div>
+  </div>
+  <!-- /ITEM 2 wrap -->
+
+  <!-- ITEM 3 placeholder (prazna stavka) — sa vertikalnom kolonom -->
+  <div class="item-wrap thick-top">
+    <div class="v-strip">
+      <div class="v-label"><span class="n">31</span>&nbsp;Koleta i opis robe</div>
+      <div class="v-label"><span class="n">44</span>&nbsp;Dodatne info / Priloženi dokumenti</div>
+    </div>
+  <div class="item-block" style="opacity:.45">
+    <div class="col">
+      <div class="c" style="min-height:120px">
+        <div class="lbl" style="margin-top:2px">Oznake i br</div>
+        <div class="lbl" style="margin-top:3px">od</div>
+        <div class="lbl" style="margin-top:3px">Br. i vrsta</div>
+        <div class="lbl" style="margin-top:3px">Br. kontejnera</div>
+      </div>
+      <div class="c">
+        <span class="lbl">Br. licence / D.Val / A.D.</span>
+      </div>
+    </div>
+    <div class="col">
+      <div class="sub" style="grid-template-columns: 60px 1fr">
+        <div class="c"><span class="n">32</span><span class="lbl">Stavka</span></div>
+        <div class="c"><span class="n">33</span><span class="lbl">Tarifna oznaka</span></div>
+      </div>
+      <div class="sub" style="grid-template-columns: 1fr 1fr 1fr;border-top:0">
+        <div class="c"><span class="n">34</span><span class="lbl">Zem. por.</span></div>
+        <div class="c"><span class="n">35</span><span class="lbl">Bruto masa</span></div>
+        <div class="c"><span class="n">36</span><span class="lbl">Preferencijal</span></div>
+      </div>
+      <div class="sub" style="grid-template-columns: 1fr 1fr 1fr;border-top:0">
+        <div class="c"><span class="n">37</span><span class="lbl">POST</span></div>
+        <div class="c"><span class="n">38</span><span class="lbl">Neto masa</span></div>
+        <div class="c"><span class="n">39</span><span class="lbl">Kvota</span></div>
+      </div>
+      <div class="c"><span class="n">40</span><span class="lbl">Skraćena deklaracija / Prethodni dokument</span></div>
+      <div class="sub" style="grid-template-columns: 1fr 1fr 60px;border-top:0">
+        <div class="c"><span class="n">41</span><span class="lbl">Dop. jedinice</span></div>
+        <div class="c"><span class="n">42</span><span class="lbl">Cijena stavke</span></div>
+        <div class="c"><span class="n">43</span><span class="lbl">V.M. kod</span></div>
+      </div>
+      <div class="c"><span class="n">46</span><span class="lbl">Statistička vrijednost</span></div>
+    </div>
+  </div>
+  </div>
+  <!-- /ITEM 3 wrap -->
+
+  <!-- 47 CALCULATION na strani 2 — sa lijevom vertikalnom kolonom -->
+  <div class="item-wrap thick-top">
+    <div class="v-strip">
+      <div class="v-label"><span class="n">47</span>&nbsp;Obračun dažbina</div>
+    </div>
+  <div class="row split-2">
+    <div class="c" style="padding:0">
+      <table class="tax">
+        <thead>
+          <tr><th>Vrsta</th><th>Osnovica</th><th>Stopa</th><th>Iznos</th><th>NP</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>001</td><td class="r">87,295.23</td><td class="r">15.00</td><td class="r">13,094.28</td><td class="r">1</td></tr>
+          <tr><td>090</td><td class="r">100,897.47</td><td class="r">17</td><td class="r">17,152.57</td><td class="r">1</td></tr>
+          <tr><td colspan="5" style="height:36px"></td></tr>
+          <tr class="total"><td colspan="3" style="text-align:right">Ukupno prva stavka</td><td class="r">30,246.85</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="c" style="padding:0">
+      <table class="tax">
+        <thead>
+          <tr><th>Vrsta</th><th>Osnovica</th><th>Stopa</th><th>Iznos</th><th>NP</th></tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="5" style="height:80px"></td></tr>
+          <tr class="total"><td colspan="3" style="text-align:right">Ukupno druga stavka</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="row split-2">
+    <div class="c" style="padding:0">
+      <table class="tax">
+        <thead><tr><th>Vrsta</th><th>Osnovica</th><th>Stopa</th><th>Iznos</th><th>NP</th></tr></thead>
+        <tbody>
+          <tr><td colspan="5" style="height:70px"></td></tr>
+          <tr class="total"><td colspan="3" style="text-align:right">Ukupno treća stavka</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="c" style="padding:0">
+      <table class="tax">
+        <thead><tr><th>Vrsta</th><th colspan="3">Iznos</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>001</td><td class="r" colspan="3">27,582.42</td><td></td></tr>
+          <tr><td>090</td><td class="r" colspan="3">36,130.99</td><td></td></tr>
+          <tr><td colspan="5" style="height:24px"></td></tr>
+          <tr class="total"><td>Ukupno</td><td class="r" colspan="3">63,713.41</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  </div>
+  <!-- /47 wrap strana 2 -->
+
+  <div class="footer-line">Štampano: 13/05/2026 15:13 &nbsp;&nbsp;&nbsp; 2</div>
+</div>
+
+</body>
+</html>
