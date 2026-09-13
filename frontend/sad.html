@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JCI / SAD — Pregled deklaracije</title>
+<style>
+:root {
+  --navy:   #0f2547;
+  --blue:   #1a3a6b;
+  --mid:    #2a5ea0;
+  --accent: #3b82f6;
+  --bg:     #e8eef7;
+  --border: #c8d4e3;
+  --radius: 8px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: #111; min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ── Top navigation ── */
+.topnav {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 100%);
+  color: #fff;
+  padding: 0 20px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.28);
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  flex-shrink: 0;
+}
+.topnav-brand { display: flex; align-items: center; gap: 8px; }
+.topnav-brand h1 { font-size: 13px; font-weight: 700; letter-spacing: 0.3px; white-space: nowrap; }
+.topnav-brand sub { font-size: 10px; opacity: 0.55; display: block; }
+.nav-sep { width: 1px; height: 28px; background: rgba(255,255,255,0.15); flex-shrink: 0; }
+
+/* File selector */
+.file-selector {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.file-selector label { font-size: 11px; color: rgba(255,255,255,0.55); white-space: nowrap; }
+.file-selector select {
+  flex: 1;
+  min-width: 0;
+  max-width: 440px;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+}
+.file-selector select option { background: #1a3a6b; color: #fff; }
+.file-selector select:focus { border-color: rgba(255,255,255,0.5); }
+
+/* Nav buttons */
+.nav-btn {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.8);
+  border: 1px solid rgba(255,255,255,0.18);
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-decoration: none;
+}
+.nav-btn:hover { background: rgba(255,255,255,0.22); color: #fff; }
+
+/* ── Content wrapper ── */
+.content-wrap { flex: 1; overflow-y: auto; padding: 20px; }
+
+/* ── Empty state ── */
+.empty-state {
+  max-width: 480px;
+  margin: 80px auto;
+  text-align: center;
+  color: #6b7280;
+}
+.empty-state .big-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+.empty-state h2 { font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 8px; }
+.empty-state p { font-size: 13px; line-height: 1.6; }
+
+/* ── SAD document card ── */
+.sad-card {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1), 0 8px 32px rgba(0,0,0,0.06);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+/* ── SAD document header ── */
+.sad-doc-header {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 100%);
+  color: #fff;
+  display: flex;
+  align-items: stretch;
+  border-bottom: 3px solid var(--navy);
+}
+.sdh-left {
+  padding: 14px 18px;
+  border-right: 1px solid rgba(255,255,255,0.15);
+  font-size: 11px;
+  line-height: 1.6;
+  min-width: 200px;
+  opacity: 0.85;
+}
+.sdh-left strong { opacity: 1; font-size: 12px; }
+.sdh-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 20px;
+  border-right: 1px solid rgba(255,255,255,0.15);
+  text-align: center;
+}
+.jci-title { font-size: 26px; font-weight: 900; letter-spacing: 6px; }
+.jci-sub { font-size: 9px; letter-spacing: 2px; opacity: 0.65; margin-top: 2px; }
+.sdh-right { padding: 12px 16px; min-width: 170px; }
+.sdh-field { margin-bottom: 8px; }
+.sdh-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.55; display: block; margin-bottom: 2px; }
+.sdh-value { font-size: 12px; font-weight: 600; }
+
+/* ── Meta row ── */
+.meta-strip {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: #f8fafd;
+}
+.meta-box {
+  flex: 1;
+  padding: 10px 14px;
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+.meta-box:last-child { border-right: none; }
+.meta-box .ml { font-size: 9px; text-transform: uppercase; letter-spacing: 0.7px; color: #6b7280; font-weight: 700; display: block; margin-bottom: 3px; }
+.meta-box .mv { font-size: 12px; font-weight: 600; color: var(--navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meta-box .mv-sm { font-size: 11px; color: #374151; }
+
+/* ── Section divider ── */
+.sec-divider {
+  background: var(--navy);
+  color: rgba(255,255,255,0.8);
+  padding: 5px 16px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* ── Items table ── */
+.items-table-wrap { overflow-x: auto; }
+table.sad-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+table.sad-table thead tr { background: var(--blue); }
+table.sad-table thead th {
+  color: rgba(255,255,255,0.9);
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+  border-right: 1px solid rgba(255,255,255,0.1);
+}
+table.sad-table thead th:last-child { border-right: none; }
+table.sad-table thead th .box-num { color: #7ec8ff; font-size: 9px; display: block; margin-bottom: 1px; }
+table.sad-table tbody tr { border-bottom: 1px solid #edf1f9; }
+table.sad-table tbody tr:nth-child(even) { background: #f8fafd; }
+table.sad-table tbody tr:hover { background: #eef5ff; }
+table.sad-table td { padding: 8px 10px; vertical-align: middle; border-right: 1px solid #edf1f9; }
+table.sad-table td:last-child { border-right: none; }
+.td-num { text-align: center; font-weight: 700; color: var(--blue); font-size: 12px; width: 36px; }
+.td-code {
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  color: #8b0000;
+  font-size: 12px;
+  white-space: nowrap;
+  width: 105px;
+}
+.td-code .code-fmt { letter-spacing: 0.5px; }
+.td-proc { width: 52px; text-align: center; color: #6b7280; }
+.td-desc { min-width: 180px; line-height: 1.5; color: #1f2937; }
+.td-origin { width: 44px; text-align: center; font-weight: 600; color: #374151; }
+.td-qty { width: 64px; text-align: right; color: #374151; }
+.td-weight { width: 80px; text-align: right; font-family: monospace; color: #374151; }
+.td-value { width: 96px; text-align: right; font-family: monospace; font-weight: 600; color: var(--navy); }
+.td-curr { width: 44px; text-align: center; font-size: 10px; color: #6b7280; }
+
+/* ── Summary row ── */
+.summary-row td {
+  background: linear-gradient(135deg, #eef2f9, #f0f5fc) !important;
+  font-weight: 700;
+  border-top: 2px solid var(--blue);
+  color: var(--navy);
+  font-size: 11px;
+}
+
+/* ── Footer ── */
+.sad-footer {
+  display: flex;
+  border-top: 2px solid var(--border);
+  background: #f8fafd;
+}
+.footer-box {
+  flex: 1;
+  padding: 12px 16px;
+  border-right: 1px solid var(--border);
+}
+.footer-box:last-child { border-right: none; }
+.footer-box .fl { font-size: 9px; text-transform: uppercase; letter-spacing: 0.7px; color: #6b7280; font-weight: 700; display: block; margin-bottom: 4px; }
+.footer-box .fv { font-size: 13px; font-weight: 700; color: var(--navy); }
+.sig-line { margin-top: 28px; border-top: 1px solid #9ca3af; padding-top: 4px; font-size: 9px; color: #9ca3af; }
+
+/* ── Pagination ── */
+.pag-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #f0f4f9;
+  border-top: 1px solid var(--border);
+}
+.pag-btn {
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  padding: 6px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.pag-btn:hover:not(:disabled) { background: var(--mid); }
+.pag-btn:disabled { background: #9ca3af; cursor: default; }
+.pag-info { font-size: 12px; color: #4b5563; }
+
+/* ── Spinner ── */
+.spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- ── Top nav ── -->
+<nav class="topnav">
+  <div class="topnav-brand">
+    <div>
+      <h1>ASYCUDA World — JCI</h1>
+      <sub>Jedinstvena carinska isprava</sub>
+    </div>
+  </div>
+  <div class="nav-sep"></div>
+
+  <div class="file-selector">
+    <label>Deklaracija:</label>
+    <select id="fileSelect" onchange="loadDeclaration()">
+      <option value="">— Odaberi XML deklaraciju —</option>
+    </select>
+    <button class="nav-btn" onclick="refreshList()">↻</button>
+  </div>
+
+  <div class="nav-sep"></div>
+  <a class="nav-btn" href="/">← Nazad</a>
+</nav>
+
+<!-- ── Content ── -->
+<div class="content-wrap">
+  <div id="sadWrapper">
+    <div class="empty-state">
+      <div class="big-icon">📋</div>
+      <h2>Nema odabrane deklaracije</h2>
+      <p>Odaberi XML deklaraciju iz padajućeg menija iznad da bi pregledao JCI / SAD formu.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentDecl = null;
+let currentPage = 1;
+const PAGE_SIZE = 20;
+
+async function refreshList() {
+  const sel = document.getElementById('fileSelect');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— Odaberi XML deklaraciju —</option>';
+  try {
+    const files = await fetch('/output/list').then(r => r.json());
+    files.filter(f => f.type === 'xml').forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f.filename;
+      opt.textContent = `${f.filename}  (${f.modified})`;
+      if (f.filename === current) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  } catch(e) { console.error(e); }
+}
+
+async function loadDeclaration() {
+  const filename = document.getElementById('fileSelect').value;
+  if (!filename) {
+    document.getElementById('sadWrapper').innerHTML = `
+      <div class="empty-state">
+        <div class="big-icon">📋</div>
+        <h2>Nema odabrane deklaracije</h2>
+        <p>Odaberi XML deklaraciju iz padajućeg menija iznad.</p>
+      </div>`;
+    return;
+  }
+  document.getElementById('sadWrapper').innerHTML = `<div class="empty-state"><span class="spinner" style="border-color:rgba(26,58,107,0.2);border-top-color:var(--blue)"></span> Učitavam...</div>`;
+  try {
+    currentDecl = await fetch(`/output/xml/${encodeURIComponent(filename)}`).then(r => r.json());
+    currentPage = 1;
+    renderSAD();
+  } catch(e) {
+    document.getElementById('sadWrapper').innerHTML = `<div class="empty-state" style="color:#dc2626">Greška: ${e.message}</div>`;
+  }
+}
+
+function fmtDate(d) {
+  if (!d || d.length < 8) return d || '—';
+  return `${d.slice(6,8)}.${d.slice(4,6)}.${d.slice(0,4)}`;
+}
+function fmtNum(v) {
+  const n = parseFloat(v);
+  return isNaN(n) ? (v || '') : n.toLocaleString('bs-BA', { minimumFractionDigits: 2, maximumFractionDigits: 3 });
+}
+function fmtCode(code) {
+  if (!code) return '';
+  const c = code.replace(/\s/g,'');
+  if (c.length >= 8) return `${c.slice(0,4)} ${c.slice(4,6)} ${c.slice(6,8)}`;
+  if (c.length === 6) return `${c.slice(0,4)} ${c.slice(4,6)}`;
+  return c;
+}
+function escH(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function groupByTariff(items) {
+  const groups = {};
+  const order = [];
+  items.forEach(item => {
+    const code = item.commodity_code || 'NEPOZNATO';
+    if (!groups[code]) {
+      groups[code] = {
+        commodity_code: code,
+        procedure_code: item.procedure_code,
+        country_origin: item.country_origin,
+        currency: item.currency,
+        sub_items: [],
+        gross_weight: 0, net_weight: 0, cif_value: 0,
+      };
+      order.push(code);
+    }
+    const g = groups[code];
+    const qty = parseFloat(item.packages_number || 1);
+    const desc = (item.commercial_desc || item.description || '').trim();
+    if (desc) g.sub_items.push({ desc, qty });
+    g.gross_weight += parseFloat(item.gross_weight || 0);
+    g.net_weight   += parseFloat(item.net_weight || 0);
+    g.cif_value    += parseFloat(item.cif_value || item.item_price || 0);
+  });
+  order.forEach(code => {
+    const g = groups[code];
+    g.description = g.sub_items
+      .map(si => `${si.desc} ${si.qty % 1 === 0 ? Math.round(si.qty) : si.qty} KOM`)
+      .join(', ');
+    g.total_qty = g.sub_items.reduce((s, si) => s + si.qty, 0);
+  });
+  return order.map((code, idx) => ({ ...groups[code], item_number: idx + 1 }));
+}
+
+function metaBox(label, value, small) {
+  return `<div class="meta-box">
+    <span class="ml">${label}</span>
+    <span class="${small?'mv-sm':'mv'}">${escH(value||'—')}</span>
+  </div>`;
+}
+
+function renderSAD() {
+  const d = currentDecl;
+  const rawItems = d.items || [];
+  const items = groupByTariff(rawItems);
+
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  currentPage = Math.min(currentPage, totalPages);
+  const pageItems = items.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+
+  const totalGross = items.reduce((s,i) => s + i.gross_weight, 0);
+  const totalNet   = items.reduce((s,i) => s + i.net_weight, 0);
+  const totalVal   = items.reduce((s,i) => s + i.cif_value, 0);
+
+  const html = `
+<div class="sad-card">
+
+  <!-- Document header -->
+  <div class="sad-doc-header">
+    <div class="sdh-left">
+      BOSNA I HERCEGOVINA<br>
+      Uprava za indirektno oporezivanje<br>
+      <strong>Carinska uprava BiH</strong>
+    </div>
+    <div class="sdh-center">
+      <div class="jci-title">J C I</div>
+      <div class="jci-sub">JEDINSTVENA CARINSKA ISPRAVA &nbsp;/&nbsp; SINGLE ADMINISTRATIVE DOCUMENT</div>
+    </div>
+    <div class="sdh-right">
+      <div class="sdh-field">
+        <span class="sdh-label">Carinarnica</span>
+        <span class="sdh-value">${escH(d.office_code)}</span>
+      </div>
+      <div class="sdh-field">
+        <span class="sdh-label">Datum</span>
+        <span class="sdh-value">${fmtDate(d.registration_date)}</span>
+      </div>
+      <div class="sdh-field">
+        <span class="sdh-label">Postupak <small style="opacity:.6">[37]</small></span>
+        <span class="sdh-value">${escH(d.procedure_code||'')}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Meta row 1: Exporter / Consignee -->
+  <div class="meta-strip">
+    <div class="meta-box" style="flex:2">
+      <span class="ml">2 — Pošiljalac / Izvoznik</span>
+      <span class="mv">${escH(d.exporter_name||'—')}</span>
+      <span class="mv-sm" style="color:#6b7280">${escH(d.exporter_country||'')}</span>
+    </div>
+    <div class="meta-box" style="flex:2">
+      <span class="ml">8 — Primalac / Uvoznik</span>
+      <span class="mv">${escH(d.consignee_name||'—')}</span>
+      <span class="mv-sm" style="color:#6b7280">${escH(d.consignee_address||'')}</span>
+    </div>
+    ${metaBox('5 — Naimenovanja', items.length)}
+    ${metaBox('6 — Paketa', d.packages_number||'—')}
+    ${metaBox('1 — Isprava', d.declaration_type||'IM')}
+  </div>
+
+  <!-- Meta row 2: Transport / Value / Weights -->
+  <div class="meta-strip">
+    ${metaBox('15a — Zemlja otpreme', d.exporter_country)}
+    ${metaBox('17a — Zemlja odredišta', d.consignee_country||'BA')}
+    ${metaBox('21 — Kontejner', d.container_number||'—')}
+    ${metaBox('25 — Nač. prev.', d.transport_mode||'—')}
+    ${metaBox('22 — Valuta', d.currency)}
+    ${metaBox('22 — Uk. vrijednost', `${d.currency} ${fmtNum(d.total_value)}`)}
+    ${metaBox('35 — Bruto (kg)', fmtNum(d.gross_weight))}
+    ${metaBox('38 — Neto (kg)', fmtNum(d.net_weight))}
+  </div>
+
+  <!-- Items section header -->
+  <div class="sec-divider">Stavke deklaracije &nbsp;/&nbsp; Items (${items.length} naimenovanja, ${rawItems.length} artikala)</div>
+
+  <!-- Items table -->
+  <div class="items-table-wrap">
+    <table class="sad-table">
+      <thead>
+        <tr>
+          <th><span class="box-num">32</span>Stav.</th>
+          <th><span class="box-num">33</span>Tarifni broj</th>
+          <th><span class="box-num">37</span>Post.</th>
+          <th><span class="box-num">31</span>Opis robe — Commercial description</th>
+          <th><span class="box-num">34</span>Zem.</th>
+          <th><span class="box-num">41</span>Kol.</th>
+          <th><span class="box-num">35</span>Bruto (kg)</th>
+          <th><span class="box-num">38</span>Neto (kg)</th>
+          <th><span class="box-num">42</span>Vrijednost</th>
+          <th>Val.</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${pageItems.map(item => `<tr>
+          <td class="td-num">${item.item_number}</td>
+          <td class="td-code"><span class="code-fmt">${escH(fmtCode(item.commodity_code))}</span></td>
+          <td class="td-proc">${escH(item.procedure_code||'')}</td>
+          <td class="td-desc">${escH(item.description)}</td>
+          <td class="td-origin">${escH(item.country_origin||'')}</td>
+          <td class="td-qty">${item.total_qty % 1 === 0 ? Math.round(item.total_qty) : item.total_qty}</td>
+          <td class="td-weight">${fmtNum(item.gross_weight.toFixed(3))}</td>
+          <td class="td-weight">${fmtNum(item.net_weight.toFixed(3))}</td>
+          <td class="td-value">${fmtNum(item.cif_value.toFixed(2))}</td>
+          <td class="td-curr">${escH(item.currency||d.currency||'')}</td>
+        </tr>`).join('')}
+        <!-- Summary -->
+        <tr class="summary-row">
+          <td class="td-num" colspan="3"></td>
+          <td class="td-desc">UKUPNO / TOTAL — ${items.length} naimenovanja (${rawItems.length} stavki)</td>
+          <td class="td-origin"></td>
+          <td class="td-qty">${rawItems.reduce((s,i)=>s+parseFloat(i.packages_number||1),0)}</td>
+          <td class="td-weight">${fmtNum(totalGross.toFixed(3))}</td>
+          <td class="td-weight">${fmtNum(totalNet.toFixed(3))}</td>
+          <td class="td-value">${fmtNum(totalVal.toFixed(2))}</td>
+          <td class="td-curr">${escH(d.currency||'')}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  ${totalPages > 1 ? `
+  <div class="pag-bar">
+    <button class="pag-btn" onclick="changePage(-1)" ${currentPage<=1?'disabled':''}>&#9664; Prethodna</button>
+    <span class="pag-info">Stranica ${currentPage} od ${totalPages} &nbsp;&mdash;&nbsp; ${pageItems.length} od ${items.length} stavki</span>
+    <button class="pag-btn" onclick="changePage(1)" ${currentPage>=totalPages?'disabled':''}>Sljedeća &#9654;</button>
+  </div>` : ''}
+
+  <!-- Footer / Box 54 -->
+  <div class="sad-footer">
+    <div class="footer-box" style="flex:2">
+      <span class="fl">54 — Mjesto i datum; Potpis i ime deklaranta</span>
+      <div class="sig-line">Potpis i pečat / Signature and stamp</div>
+    </div>
+    <div class="footer-box">
+      <span class="fl">Datum registracije</span>
+      <span class="fv">${fmtDate(d.registration_date)}</span>
+    </div>
+    <div class="footer-box">
+      <span class="fl">Broj deklaracije</span>
+      <span class="fv">${escH(d.declarant_ref||'—')}</span>
+    </div>
+    <div class="footer-box">
+      <span class="fl">Carinarnica</span>
+      <span class="fv">${escH(d.office_code||'—')}</span>
+    </div>
+  </div>
+
+</div>`;
+
+  document.getElementById('sadWrapper').innerHTML = html;
+  document.getElementById('sadWrapper').scrollTop = 0;
+}
+
+function changePage(dir) {
+  if (!currentDecl) return;
+  const items = groupByTariff(currentDecl.items || []);
+  const totalPages = Math.ceil(items.length / PAGE_SIZE);
+  currentPage = Math.max(1, Math.min(totalPages, currentPage + dir));
+  renderSAD();
+}
+
+refreshList();
+</script>
+</body>
+</html>

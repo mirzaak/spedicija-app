@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="UTF-8">
+<title>Carinska tarifa BiH 2026 — Preglednik</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 13px; background: #e8eef7; color: #111; }
+
+/* ── Toolbar ── */
+.toolbar {
+  background: linear-gradient(135deg, #0f2547 0%, #1a3a6b 100%);
+  color: #fff;
+  padding: 0 20px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.28);
+}
+.toolbar h1 { font-size: 13px; font-weight: 700; white-space: nowrap; letter-spacing: 0.3px; }
+.back-btn {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.8);
+  border: 1px solid rgba(255,255,255,0.18);
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  white-space: nowrap;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.back-btn:hover { background: rgba(255,255,255,0.22); color: #fff; }
+
+/* ── Search bar ── */
+.search-bar {
+  background: #fff;
+  border-bottom: 2px solid #dde4ef;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 52px;
+  z-index: 199;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+}
+.search-bar input[type=text] {
+  flex: 1;
+  min-width: 240px;
+  padding: 7px 14px;
+  border: 2px solid #c5d0e6;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  background: #f8fafd;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.search-bar input[type=text]:focus {
+  border-color: #1a3a6b;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(26,58,107,0.12);
+}
+.search-bar select {
+  padding: 7px 10px;
+  border: 2px solid #c5d0e6;
+  border-radius: 6px;
+  font-size: 12px;
+  background: #f8fafd;
+  min-width: 240px;
+  cursor: pointer;
+}
+.search-bar select:focus { border-color: #1a3a6b; outline: none; }
+.search-btn {
+  background: #1a3a6b;
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  transition: background 0.15s;
+}
+.search-btn:hover { background: #24508f; }
+.clear-btn {
+  background: #eef1f7;
+  color: #555;
+  border: 1px solid #c5d0e6;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.clear-btn:hover { background: #dde4ef; }
+.result-count {
+  font-size: 12px;
+  color: #666;
+  white-space: nowrap;
+  min-width: 100px;
+}
+
+/* ── Main layout ── */
+.main {
+  display: flex;
+  height: calc(100vh - 102px);
+}
+
+/* ── Chapter sidebar ── */
+.sidebar {
+  width: 230px;
+  background: #fff;
+  border-right: 1px solid #d4dbe8;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.sidebar-title {
+  padding: 9px 12px;
+  background: #1a3a6b;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.chapter-item {
+  padding: 6px 12px;
+  border-bottom: 1px solid #f0f3f9;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: background 0.1s;
+  user-select: none;
+}
+.chapter-item:hover { background: #eef2fb; }
+.chapter-item.active { background: #1a3a6b; color: #fff; }
+.chapter-item.active .ch-count { color: #8ea9d4; }
+.ch-num {
+  font-weight: 700;
+  font-size: 12px;
+  min-width: 26px;
+  color: #1a3a6b;
+  font-family: 'Courier New', monospace;
+}
+.chapter-item.active .ch-num { color: #8ec8ff; }
+.ch-desc { font-size: 10px; flex: 1; line-height: 1.4; color: #444; }
+.chapter-item.active .ch-desc { color: #ccd9f0; }
+.ch-count {
+  font-size: 10px;
+  color: #999;
+  white-space: nowrap;
+  background: #f0f3f9;
+  padding: 1px 5px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.chapter-item.active .ch-count { background: rgba(255,255,255,0.15); color: #aac; }
+.ch-all { background: #f5f7fc; font-weight: 600; }
+.ch-all:hover { background: #e8eef8; }
+
+/* ── Content area ── */
+.content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Table ── */
+.table-wrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+  background: #eef1f7;
+}
+
+/* Group header rows */
+.group-header {
+  background: #1a3a6b !important;
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 7px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 2px solid #0d2244;
+  position: sticky;
+  top: 0;
+  z-index: 4;
+}
+.group-header .gh-code {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #7ec8ff;
+  white-space: nowrap;
+  min-width: 80px;
+}
+.group-header .gh-desc { flex: 1; font-size: 12px; }
+.group-header .gh-count {
+  font-size: 11px;
+  color: #aac;
+  background: rgba(255,255,255,0.1);
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.group-header .gh-toggle { font-size: 10px; color: #aac; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  background: #fff;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+thead th {
+  background: #2c4e8a;
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  font-weight: 600;
+}
+thead th.center { text-align: center; }
+tbody tr { border-bottom: 1px solid #edf0f7; transition: background 0.08s; }
+tbody tr:hover { background: #e8f0fb !important; }
+tbody tr:nth-child(even) { background: #f8fafd; }
+tbody tr:nth-child(odd) { background: #fff; }
+
+td { padding: 7px 12px; vertical-align: middle; }
+td.code-cell {
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+  width: 160px;
+}
+.code-fmt {
+  font-weight: 700;
+  font-size: 13px;
+  color: #8b0000;
+  display: inline-block;
+}
+.code-level {
+  font-size: 9px;
+  color: #aaa;
+  font-family: sans-serif;
+  display: block;
+  margin-top: 1px;
+  font-weight: normal;
+}
+.copy-btn {
+  background: none;
+  border: 1px solid #c5d0e6;
+  border-radius: 3px;
+  font-size: 9px;
+  color: #888;
+  padding: 1px 5px;
+  cursor: pointer;
+  margin-left: 4px;
+  vertical-align: middle;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+tbody tr:hover .copy-btn { opacity: 1; }
+.copy-btn:hover { background: #e8eef8; color: #333; }
+.copy-btn.copied { color: #2a8a2a; border-color: #2a8a2a; }
+
+td.chapter-badge { text-align: center; width: 46px; }
+.badge {
+  display: inline-block;
+  background: #1a3a6b;
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+td.desc-cell { color: #222; line-height: 1.5; }
+.desc-path {
+  font-size: 10px;
+  color: #888;
+  margin-bottom: 2px;
+  display: block;
+}
+.desc-leaf {
+  font-size: 12px;
+  color: #1a1a1a;
+  font-weight: 500;
+}
+td.desc-cell mark { background: #fff176; border-radius: 2px; padding: 0 1px; }
+
+/* ── Pagination ── */
+.pagination {
+  background: #fff;
+  border-top: 2px solid #dde4ef;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.pag-btn {
+  background: #1a3a6b;
+  color: #fff;
+  border: none;
+  padding: 5px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.pag-btn:hover:not(:disabled) { background: #24508f; }
+.pag-btn:disabled { background: #bbb; cursor: default; }
+.pag-info { font-size: 12px; color: #555; min-width: 220px; text-align: center; }
+.pag-size {
+  padding: 5px 8px;
+  border: 1px solid #c5d0e6;
+  border-radius: 5px;
+  font-size: 12px;
+  background: #f8fafd;
+}
+
+/* ── Loading / empty ── */
+.loading { padding: 60px; text-align: center; color: #888; font-size: 14px; }
+.no-results { padding: 80px; text-align: center; color: #aaa; font-size: 13px; }
+.spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid #dde; border-top-color: #1a3a6b; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <button class="back-btn" onclick="window.location.href='/'">← Nazad</button>
+  <h1>Carinska tarifa BiH 2026 &mdash; Preglednik tarifnih stavki</h1>
+</div>
+
+<div class="search-bar">
+  <input type="text" id="searchInput"
+    placeholder="Pretraži opis ili kod (npr. 'filter ulja', '8421', 'konji')..."
+    onkeydown="if(event.key==='Enter') doSearch()" autofocus>
+  <select id="chapterSelect" onchange="onChapterSelect()">
+    <option value="">Sva poglavlja</option>
+  </select>
+  <button class="search-btn" onclick="doSearch()">&#128269; Pretraži</button>
+  <button class="clear-btn" onclick="clearSearch()">&#10005; Poništi</button>
+  <span class="result-count" id="resultCount"></span>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-title">HS Poglavlja</div>
+    <div id="chapterList"><div class="loading" style="padding:20px;font-size:11px">Učitavanje...</div></div>
+  </div>
+
+  <div class="content-area">
+    <div class="table-wrap" id="tableWrap">
+      <div class="loading"><span class="spinner"></span>Učitavanje tarife...</div>
+    </div>
+    <div class="pagination" id="pagination" style="display:none">
+      <button class="pag-btn" id="prevBtn" onclick="changePage(-1)">&#9664; Prethodna</button>
+      <span class="pag-info" id="pagInfo"></span>
+      <button class="pag-btn" id="nextBtn" onclick="changePage(1)">Sljedeća &#9654;</button>
+      <select class="pag-size" id="pagSize" onchange="onPageSizeChange()">
+        <option value="50">50 po stranici</option>
+        <option value="100" selected>100 po stranici</option>
+        <option value="200">200 po stranici</option>
+        <option value="500">500 po stranici</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentPage = 1;
+let currentChapter = '';
+let currentQ = '';
+let totalResults = 0;
+let chapters = [];
+
+// Chapter names from HS standard
+const CH_NAMES = {
+  '01':'Žive životinje','02':'Meso','03':'Riba','04':'Mliječni proizvodi','05':'Ostali anim. proiz.',
+  '06':'Živo bilje','07':'Povrće','08':'Voće','09':'Kafa, čaj, začini','10':'Žitarice',
+  '11':'Mlinski proiz.','12':'Uljarice','13':'Biljni sokovi','14':'Biljno tkivo','15':'Masti i ulja',
+  '16':'Prerađevine mesa','17':'Šećer','18':'Kakao','19':'Brašneni proiz.','20':'Prerađevine povrća',
+  '21':'Raznoliki prehr.','22':'Piće','23':'Stočna hrana','24':'Duhan','25':'Sol, kamen, gips',
+  '26':'Rude','27':'Mineralna goriva','28':'Anorg. hemikalije','29':'Org. hemikalije','30':'Farmaceutski',
+  '31':'Gnojiva','32':'Boje i lakovi','33':'Parfemi','34':'Sapuni','35':'Albumini, škrob',
+  '36':'Eksplozivi','37':'Foto proiz.','38':'Razni hem. proiz.','39':'Plastika','40':'Guma',
+  '41':'Sirova koža','42':'Kožna roba','43':'Krzno','44':'Drvo','45':'Pluto',
+  '46':'Pletiva','47':'Masa za papir','48':'Papir','49':'Tiskovine','50':'Svila',
+  '51':'Vuna','52':'Pamuk','53':'Ostala biljna vlakna','54':'Sintetička vlakna','55':'Umjetna vlakna',
+  '56':'Vata, filc','57':'Tepisi','58':'Spec. tkanine','59':'Impreg. tkanine','60':'Pletene tkanine',
+  '61':'Odjeća pletena','62':'Odjeća tkana','63':'Ostali tekstil','64':'Obuća','65':'Pokrivala za glavu',
+  '66':'Kišobrani','67':'Perje, cvijeće','68':'Kamen, gips, cement','69':'Keramika','70':'Staklo',
+  '71':'Drago kamenje','72':'Lijevano željezo','73':'Željezni proiz.','74':'Bakar','75':'Nikal',
+  '76':'Aluminij','77':'(rezervisano)','78':'Olovo','79':'Cink','80':'Kalaj',
+  '81':'Ostali metali','82':'Alati i noževi','83':'Razni met. proiz.','84':'Mašine i mehanički uređaji','85':'Električni uređaji',
+  '86':'Šinsko vozilo','87':'Motorna vozila','88':'Zrakoplovi','89':'Brodovi','90':'Optički instrumenti',
+  '91':'Satovi','92':'Muzički instrumenti','93':'Oružje','94':'Namještaj','95':'Igračke',
+  '96':'Razni gotovi proiz.','97':'Umjetnine','98':'(spec.)','99':'(spec.)'
+};
+
+function pageSize() { return parseInt(document.getElementById('pagSize').value); }
+
+function fmtCode(code) {
+  if (!code) return '';
+  code = code.replace(/\s/g, '');
+  if (code.length === 10) return code.slice(0,4)+' '+code.slice(4,6)+' '+code.slice(6,8)+' '+code.slice(8,10);
+  if (code.length === 8)  return code.slice(0,4)+' '+code.slice(4,6)+' '+code.slice(6,8);
+  if (code.length === 6)  return code.slice(0,4)+' '+code.slice(4,6);
+  return code;
+}
+
+function codeLevel(code) {
+  const l = code.replace(/\s/g,'').length;
+  if (l === 10) return '10-cif. &mdash; tarifna stavka';
+  if (l === 8)  return '8-cif.';
+  if (l === 6)  return '6-cif.';
+  return '4-cif. &mdash; tarifni broj';
+}
+
+function splitDesc(desc) {
+  if (!desc) return { path: '', leaf: '' };
+  const parts = desc.split(' — ');
+  if (parts.length <= 1) return { path: '', leaf: desc };
+  const leaf = parts[parts.length - 1];
+  const path = parts.slice(0, -1).join(' › ');
+  return { path, leaf };
+}
+
+function highlight(text, q) {
+  if (!q || !text) return escHtml(text || '');
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return escHtml(text).replace(new RegExp(`(${escaped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'), '<mark>$1</mark>');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function hlRaw(text, q) {
+  if (!q || !text) return text || '';
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark>$1</mark>');
+}
+
+async function init() {
+  try {
+    chapters = await fetch('/tariffs/chapters').then(r => r.json());
+    renderChapters();
+    populateChapterSelect();
+  } catch(e) { console.error(e); }
+  loadPage();
+}
+
+function renderChapters() {
+  const list = document.getElementById('chapterList');
+  const total = chapters.reduce((s,c) => s + c.count, 0);
+  let html = `<div class="chapter-item ch-all ${currentChapter===''?'active':''}" onclick="selectChapter('')">
+    <span class="ch-num" style="color:inherit">SVE</span>
+    <span class="ch-desc">Sve tarifne stavke</span>
+    <span class="ch-count">${total.toLocaleString()}</span>
+  </div>`;
+  html += chapters.map(c => {
+    const num = parseInt(c.chapter);
+    const name = CH_NAMES[c.chapter] || (c.first_desc ? c.first_desc.slice(0,32) : '');
+    return `<div class="chapter-item ${currentChapter===c.chapter?'active':''}" onclick="selectChapter('${c.chapter}')">
+      <span class="ch-num">${String(num).padStart(2,'0')}</span>
+      <span class="ch-desc">${escHtml(name)}</span>
+      <span class="ch-count">${c.count}</span>
+    </div>`;
+  }).join('');
+  list.innerHTML = html;
+}
+
+function populateChapterSelect() {
+  const sel = document.getElementById('chapterSelect');
+  sel.innerHTML = '<option value="">Sva poglavlja</option>';
+  chapters.forEach(c => {
+    const num = parseInt(c.chapter);
+    const name = CH_NAMES[c.chapter] || (c.first_desc ? c.first_desc.slice(0,40) : '');
+    const opt = document.createElement('option');
+    opt.value = c.chapter;
+    opt.textContent = `Pog. ${String(num).padStart(2,'0')} — ${name} (${c.count})`;
+    if (c.chapter === currentChapter) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function selectChapter(ch) {
+  currentChapter = ch;
+  document.getElementById('chapterSelect').value = ch;
+  currentPage = 1;
+  renderChapters();
+  loadPage();
+  // Scroll sidebar item into view
+  const items = document.querySelectorAll('.chapter-item');
+  items.forEach(el => { if (el.classList.contains('active')) el.scrollIntoView({block:'nearest'}); });
+}
+
+function onChapterSelect() {
+  currentChapter = document.getElementById('chapterSelect').value;
+  currentPage = 1;
+  renderChapters();
+  loadPage();
+}
+
+function doSearch() {
+  currentQ = document.getElementById('searchInput').value.trim();
+  currentPage = 1;
+  loadPage();
+}
+
+function clearSearch() {
+  currentQ = '';
+  currentChapter = '';
+  document.getElementById('searchInput').value = '';
+  document.getElementById('chapterSelect').value = '';
+  currentPage = 1;
+  renderChapters();
+  loadPage();
+}
+
+function onPageSizeChange() { currentPage = 1; loadPage(); }
+function changePage(dir) { currentPage += dir; loadPage(); }
+
+function copyCode(btn, code) {
+  navigator.clipboard.writeText(code.replace(/\s/g,'')).then(() => {
+    btn.textContent = '✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'kopiraj'; btn.classList.remove('copied'); }, 1500);
+  });
+}
+
+async function loadPage() {
+  const wrap = document.getElementById('tableWrap');
+  wrap.innerHTML = '<div class="loading"><span class="spinner"></span>Učitavanje...</div>';
+  document.getElementById('pagination').style.display = 'none';
+
+  const ps = pageSize();
+  const params = new URLSearchParams({ page: currentPage, page_size: ps, q: currentQ, chapter: currentChapter });
+
+  try {
+    const data = await fetch(`/tariffs/official-browse?${params}`).then(r => r.json());
+    totalResults = data.total;
+
+    document.getElementById('resultCount').textContent =
+      totalResults === 0 ? 'Nema rezultata' : `${totalResults.toLocaleString()} stavki`;
+
+    if (data.results.length === 0) {
+      wrap.innerHTML = '<div class="no-results">&#128269; Nema rezultata za zadanu pretragu.</div>';
+      return;
+    }
+
+    const totalPages = Math.ceil(totalResults / ps);
+    const startIdx = (currentPage - 1) * ps + 1;
+    const endIdx = Math.min(currentPage * ps, totalResults);
+
+    // Group rows by 4-digit prefix for visual grouping (only when browsing by chapter or no filter)
+    const useGroups = !currentQ && data.results.length > 0;
+    let html = '';
+
+    if (useGroups) {
+      // Build groups by 4-digit prefix
+      const groups = {};
+      const groupOrder = [];
+      data.results.forEach(r => {
+        const prefix = r.code.slice(0,4);
+        if (!groups[prefix]) { groups[prefix] = []; groupOrder.push(prefix); }
+        groups[prefix].push(r);
+      });
+
+      groupOrder.forEach(prefix => {
+        const items = groups[prefix];
+        // Get the top-level description (first part before " — ")
+        const topDesc = items[0].description ? items[0].description.split(' — ')[0] : '';
+        html += `<div class="group-header">
+          <span class="gh-code">${fmtCode(prefix)}</span>
+          <span class="gh-desc">${escHtml(topDesc.length > 90 ? topDesc.slice(0,90)+'…' : topDesc)}</span>
+          <span class="gh-count">${items.length} stavki</span>
+        </div>
+        <table>
+          <tbody>`;
+        items.forEach(r => {
+          const {path, leaf} = splitDesc(r.description || '');
+          const codeFmt = fmtCode(r.code);
+          html += `<tr>
+            <td class="code-cell">
+              <span class="code-fmt">${codeFmt}</span>
+              <span class="code-level">${codeLevel(r.code)}</span>
+              <button class="copy-btn" onclick="copyCode(this,'${codeFmt}')">kopiraj</button>
+            </td>
+            <td class="desc-cell">
+              ${path ? `<span class="desc-path">${escHtml(path)}</span>` : ''}
+              <span class="desc-leaf">${escHtml(leaf || r.description || '')}</span>
+            </td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+      });
+    } else {
+      // Search results: single flat table
+      html = `<table>
+        <thead>
+          <tr>
+            <th style="width:46px" class="center">POG.</th>
+            <th style="width:170px">TARIFNI BROJ</th>
+            <th>OPIS</th>
+          </tr>
+        </thead>
+        <tbody>`;
+      data.results.forEach(r => {
+        const {path, leaf} = splitDesc(r.description || '');
+        const codeFmt = fmtCode(r.code);
+        const leafHl = hlRaw(escHtml(leaf || r.description || ''), currentQ);
+        const pathHl = path ? hlRaw(escHtml(path), currentQ) : '';
+        const codeHl = hlRaw(codeFmt, currentQ);
+        html += `<tr>
+          <td class="chapter-badge"><span class="badge">${parseInt(r.chapter)}</span></td>
+          <td class="code-cell">
+            <span class="code-fmt">${codeHl}</span>
+            <span class="code-level">${codeLevel(r.code)}</span>
+            <button class="copy-btn" onclick="copyCode(this,'${codeFmt}')">kopiraj</button>
+          </td>
+          <td class="desc-cell">
+            ${pathHl ? `<span class="desc-path">${pathHl}</span>` : ''}
+            <span class="desc-leaf">${leafHl}</span>
+          </td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+    }
+
+    wrap.innerHTML = html;
+
+    // Pagination
+    const pag = document.getElementById('pagination');
+    pag.style.display = 'flex';
+    document.getElementById('pagInfo').textContent =
+      `Str. ${currentPage} / ${totalPages} — stavke ${startIdx.toLocaleString()}–${endIdx.toLocaleString()} od ${totalResults.toLocaleString()}`;
+    document.getElementById('prevBtn').disabled = currentPage <= 1;
+    document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+
+  } catch(e) {
+    wrap.innerHTML = `<div class="no-results" style="color:#c00">Greška: ${escHtml(e.message)}</div>`;
+  }
+}
+
+// Ctrl+F / Cmd+F → focus search
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+    e.preventDefault();
+    const inp = document.getElementById('searchInput');
+    inp.focus(); inp.select();
+  }
+});
+
+init();
+</script>
+</body>
+</html>
