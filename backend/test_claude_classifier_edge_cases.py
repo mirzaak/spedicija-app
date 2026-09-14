@@ -61,7 +61,7 @@ def _add_ktm(db, keyword, keyword_type, code, confidence=0.9, freq=5, desc=""):
 
 class FakeMessage:
     def __init__(self, text):
-        self.content = [SimpleNamespace(text=text)]
+        self.content = [SimpleNamespace(type="text", text=text)]
         self.usage = SimpleNamespace(input_tokens=1, output_tokens=1,
                                       cache_creation_input_tokens=0,
                                       cache_read_input_tokens=0)
@@ -215,7 +215,7 @@ def test_find_keyword_tariff_no_match_returns_none(db):
 # ── _find_auto_repeat ─────────────────────────────────────────────────────────
 
 def test_find_auto_repeat_matches_source_prefix(db):
-    db.add(TariffCorrection(item_name_normalized="LED TRAKA 5M", item_name_original="LED traka 5m",
+    db.add(TariffCorrection(item_name_normalized="LED TRAKA", item_name_original="LED traka 5m",
                              tariff_code="94054000", confirmations=0, source="auto_repeat(6)"))
     db.commit()
     result = cc._find_auto_repeat("led traka 5m", db)
@@ -331,6 +331,7 @@ def test_batch_ai_path_rejects_out_of_chapter_code_falls_back_low_confidence(db,
                       "confidence": "high", "reason": "x"}]),
     ])
     monkeypatch.setattr(cc, "_get_client", lambda: fake)
+    monkeypatch.setattr(cc, "_vs_code_in_chapter", lambda name, ch, valid: "84000000")
     result = cc.classify_items_batch(
         [{"name": "Neki nepoznat uredjaj", "value": 10, "net_weight": 1}], db=db
     )
