@@ -32,3 +32,12 @@ graphify-out/
 # Local dev tooling
 .claude/
 "venv 2"
+
+# local tooling
+CLAUDE.md
+ARCHITECT.md
+BUILDER.md
+REVIEWER.md
+manifest.md
+handoff/
+.claude/
